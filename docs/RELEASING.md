@@ -12,8 +12,8 @@
 ## Публикация на сайте GitHub
 
 1. Открыть страницу репозитория → **Releases** → **Draft a new release**.
-2. Создать тег вида `v0.2.0` от проверенного коммита основной ветки.
-3. Заголовок сделать понятным человеку, например `Fotur Typing Helper 0.2.0`.
+2. Создать тег вида `v0.3.0` от проверенного коммита основной ветки.
+3. Заголовок сделать понятным человеку, например `Fotur Typing Helper 0.3.0`.
 4. Для ранней публичной версии включить **Set as a pre-release**.
 5. Приложить Setup `.exe`, ZIP portable-сборки и файл SHA-256.
 6. Перечитать заметки и нажать **Publish release**.
@@ -23,12 +23,12 @@
 После установки `gh` и команды `gh auth login` выпуск можно создать так:
 
 ```powershell
-gh release create v0.2.0 `
-  artifacts/installer/FoturTypingHelper-Setup-0.2.0-win-x64.exe `
-  artifacts/FoturTypingHelper-0.2.0-win-x64-portable.zip `
+gh release create v0.3.0 `
+  artifacts/installer/FoturTypingHelper-Setup-0.3.0-win-x64.exe `
+  artifacts/FoturTypingHelper-0.3.0-win-x64-portable.zip `
   artifacts/SHA256SUMS.txt `
   --repo Woonze/Fotur_Typing_Helper `
-  --title "Fotur Typing Helper 0.2.0" `
+  --title "Fotur Typing Helper 0.3.0" `
   --notes-file RELEASE_NOTES.md `
   --prerelease
 ```

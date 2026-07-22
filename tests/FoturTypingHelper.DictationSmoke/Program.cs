@@ -19,6 +19,7 @@ try
     {
         SpeechModel = "base",
         SpeechLanguage = "auto",
+        DictationTaskMode = DictationTaskMode.Transcribe,
         VoiceCommandsEnabled = true
     });
     Console.WriteLine($"PASS: microphone, model and Whisper pipeline completed. Result: {text}");

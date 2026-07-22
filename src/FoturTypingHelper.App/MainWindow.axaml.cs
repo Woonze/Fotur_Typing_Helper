@@ -36,6 +36,8 @@ public partial class MainWindow : Window
         TrayToggle.IsChecked = s.MinimizeToTray; StatisticsToggle.IsChecked = s.LocalStatisticsEnabled;
         HotkeyModeCombo.SelectedIndex = s.DictationHotkeyMode == DictationHotkeyMode.Hold ? 0 : 1;
         ModelCombo.SelectedIndex = s.SpeechModel switch { "tiny" => 0, "small" => 2, "medium" => 3, _ => 1 };
+        SpeechLanguageCombo.SelectedIndex = s.SpeechLanguage switch { "ru" => 1, "en" => 2, _ => 0 };
+        TranslationToggle.IsChecked = s.DictationTaskMode == DictationTaskMode.TranslateToEnglish;
         DictionaryList.ItemsSource = s.CustomDictionary.ToArray();
         ExcludedProcessesText.Text = string.Join(Environment.NewLine, s.ExcludedProcesses);
         DictationHotkeyBox.Text = s.DictationHotkey;
@@ -63,6 +65,10 @@ public partial class MainWindow : Window
         s.MinimizeToTray = TrayToggle.IsChecked == true; s.LocalStatisticsEnabled = StatisticsToggle.IsChecked == true;
         s.DictationHotkeyMode = HotkeyModeCombo.SelectedIndex == 1 ? DictationHotkeyMode.Toggle : DictationHotkeyMode.Hold;
         s.SpeechModel = ModelCombo.SelectedIndex switch { 0 => "tiny", 2 => "small", 3 => "medium", _ => "base" };
+        s.SpeechLanguage = SpeechLanguageCombo.SelectedIndex switch { 1 => "ru", 2 => "en", _ => "auto" };
+        s.DictationTaskMode = TranslationToggle.IsChecked == true
+            ? DictationTaskMode.TranslateToEnglish
+            : DictationTaskMode.Transcribe;
         ConfidenceValueText.Text = $"{s.CorrectionConfidence:P0}";
         _store.Save(); _autostart.SetEnabled(s.StartWithWindows); _runtime.RefreshSettings();
     }

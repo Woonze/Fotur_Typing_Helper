@@ -29,8 +29,12 @@ public sealed class LocalDictationService
         var modelPath = await EnsureModelAsync(settings.SpeechModel, cancellationToken);
         using var factory = WhisperFactory.FromPath(modelPath);
         var builder = factory.CreateBuilder();
-        if (!string.Equals(settings.SpeechLanguage, "auto", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(settings.SpeechLanguage, "auto", StringComparison.OrdinalIgnoreCase))
+            builder.WithLanguageDetection();
+        else
             builder.WithLanguage(settings.SpeechLanguage);
+        if (settings.DictationTaskMode == DictationTaskMode.TranslateToEnglish)
+            builder.WithTranslate();
         using var processor = builder.Build();
         await using var audio = File.OpenRead(audioPath);
         var result = new List<string>();

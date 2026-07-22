@@ -34,6 +34,9 @@ public partial class App : Application
             CreateTray(desktop, store);
             desktop.Exit += (_, _) => { _runtime.Dispose(); _tray?.Dispose(); store.Save(); };
             _runtime.Start();
+            var readyFile = Environment.GetEnvironmentVariable("FOTUR_READY_FILE");
+            if (!string.IsNullOrWhiteSpace(readyFile))
+                File.WriteAllText(readyFile, "ready");
 
             if (desktop.Args?.Contains("--background") == true)
             {

@@ -21,6 +21,8 @@ public sealed class KeyboardHookService : IDisposable
     private IntPtr _hook;
     private CorrectionApplied? _lastCorrection;
     private DateTime _lastCorrectionUtc;
+    private bool _dictationGestureActive;
+    private bool _dictationKeyCaptured;
 
     public event EventHandler<CorrectionApplied>? Corrected;
     public event EventHandler<bool>? DictationHotkeyChanged;
@@ -58,10 +60,28 @@ public sealed class KeyboardHookService : IDisposable
         var message = wParam.ToInt32();
         var down = message is NativeMethods.WmKeyDown or NativeMethods.WmSysKeyDown;
         var up = message is NativeMethods.WmKeyUp or NativeMethods.WmSysKeyUp;
-        if (MatchesHotkey((int)data.VkCode, _dictationHotkey))
+        var dictationKey = string.Equals(VirtualKeyName((int)data.VkCode), _dictationHotkey.Key, StringComparison.OrdinalIgnoreCase);
+        if (down && dictationKey && CurrentModifiers() == _dictationHotkey.Modifiers)
         {
-            if (down || up) DictationHotkeyChanged?.Invoke(this, down);
+            if (!_dictationGestureActive)
+            {
+                _dictationGestureActive = true;
+                _dictationKeyCaptured = true;
+                DictationHotkeyChanged?.Invoke(this, true);
+            }
             return new IntPtr(1);
+        }
+        if (up && dictationKey && _dictationKeyCaptured)
+        {
+            _dictationKeyCaptured = false;
+            if (_dictationGestureActive) DictationHotkeyChanged?.Invoke(this, false);
+            _dictationGestureActive = false;
+            return new IntPtr(1);
+        }
+        if (up && _dictationGestureActive && IsRequiredModifier((int)data.VkCode, _dictationHotkey.Modifiers))
+        {
+            _dictationGestureActive = false;
+            DictationHotkeyChanged?.Invoke(this, false);
         }
 
         if (!down) return NativeMethods.CallNextHookEx(_hook, code, wParam, lParam);
@@ -95,7 +115,7 @@ public sealed class KeyboardHookService : IDisposable
         }
         else if (TryGetCharacter(data.VkCode, data.ScanCode, active.ThreadId, out var character))
         {
-            if (char.IsLetter(character) || character is '\'' or '-')
+            if (char.IsLetter(character) || character is '\'' or '-' || LayoutConverter.IsConvertible(character))
             {
                 _word.Append(character);
                 if (_settings.EarlyCorrection && TryEarlyCorrection(active)) return new IntPtr(1);
@@ -139,7 +159,7 @@ public sealed class KeyboardHookService : IDisposable
 
     private bool TryEarlyCorrection(ActiveWindowInfo active)
     {
-        if (_word.Length < 4) return false;
+        if (_word.Length < 4 || _recentWords.Count > 0) return false;
         var decision = _scorer.Evaluate(_word.ToString(), Math.Max(0.9, _settings.CorrectionConfidence + 0.15));
         if (!decision.ShouldCorrect) return false;
         // The current key has not reached the target window yet, so only the preceding characters are deleted.
@@ -174,13 +194,56 @@ public sealed class KeyboardHookService : IDisposable
 
     private static bool TryGetCharacter(uint vk, uint scan, uint thread, out char character)
     {
+        var layout = NativeMethods.GetKeyboardLayout(thread);
+        if (TryGetKnownLayoutCharacter(vk, layout, out character)) return true;
+
         var state = new byte[256];
         var buffer = new StringBuilder(8);
         NativeMethods.GetKeyboardState(state);
-        var result = NativeMethods.ToUnicodeEx(vk, scan, state, buffer, buffer.Capacity, 0,
-            NativeMethods.GetKeyboardLayout(thread));
+        // WH_KEYBOARD_LL runs before Windows updates the asynchronous key state.
+        // Mark the current key as pressed so ToUnicodeEx is deterministic even for fast/injected input.
+        if (vk < state.Length) state[vk] |= 0x80;
+        var effectiveScan = scan == 0 ? NativeMethods.MapVirtualKeyEx(vk, 0, layout) : scan;
+        var result = NativeMethods.ToUnicodeEx(vk, effectiveScan, state, buffer, buffer.Capacity, 0, layout);
         character = result > 0 ? buffer[0] : '\0';
+        if (result > 0 && char.IsLetter(character))
+        {
+            var upper = Modifier(NativeMethods.VkLShift, NativeMethods.VkRShift) ^
+                        ((NativeMethods.GetKeyState(NativeMethods.VkCapital) & 1) != 0);
+            character = upper ? char.ToUpper(character) : char.ToLower(character);
+        }
         return result > 0;
+    }
+
+    private static bool TryGetKnownLayoutCharacter(uint vk, IntPtr layout, out char character)
+    {
+        var shift = Modifier(NativeMethods.VkLShift, NativeMethods.VkRShift);
+        var caps = (NativeMethods.GetKeyState(NativeMethods.VkCapital) & 1) != 0;
+        char physical;
+        if (vk is >= 0x41 and <= 0x5A)
+        {
+            physical = (char)vk;
+            physical = shift ^ caps ? char.ToUpperInvariant(physical) : char.ToLowerInvariant(physical);
+        }
+        else
+        {
+            physical = vk switch
+            {
+                0xC0 => shift ? '~' : '`',
+                0xDB => shift ? '{' : '[',
+                0xDD => shift ? '}' : ']',
+                0xBA => shift ? ':' : ';',
+                0xDE => shift ? '"' : '\'',
+                0xBC => shift ? '<' : ',',
+                0xBE => shift ? '>' : '.',
+                _ => '\0'
+            };
+            if (physical == '\0') { character = '\0'; return false; }
+        }
+
+        var languageId = unchecked((ushort)layout.ToInt64());
+        character = languageId == 0x0419 ? LayoutConverter.ToRussian(physical.ToString())[0] : physical;
+        return languageId is 0x0409 or 0x0419;
     }
 
     private static bool Modifier(int left, int right) =>
@@ -194,6 +257,11 @@ public sealed class KeyboardHookService : IDisposable
 
     private static bool MatchesHotkey(int vk, HotkeyGesture gesture) =>
         string.Equals(VirtualKeyName(vk), gesture.Key, StringComparison.OrdinalIgnoreCase) && CurrentModifiers() == gesture.Modifiers;
+
+    private static bool IsRequiredModifier(int vk, HotkeyModifiers modifiers) =>
+        (vk is NativeMethods.VkLControl or NativeMethods.VkRControl && modifiers.HasFlag(HotkeyModifiers.Ctrl)) ||
+        (vk is NativeMethods.VkLMenu or NativeMethods.VkRMenu && modifiers.HasFlag(HotkeyModifiers.Alt)) ||
+        (vk is NativeMethods.VkLShift or NativeMethods.VkRShift && modifiers.HasFlag(HotkeyModifiers.Shift));
 
     private static HotkeyModifiers CurrentModifiers()
     {

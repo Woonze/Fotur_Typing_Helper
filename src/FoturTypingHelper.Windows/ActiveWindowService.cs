@@ -1,11 +1,12 @@
 using System.Diagnostics;
 using System.Text;
+using FoturTypingHelper.Core;
 
 namespace FoturTypingHelper.Windows;
 
 public sealed record ActiveWindowInfo(IntPtr Handle, uint ThreadId, string ProcessName, bool IsPasswordField);
 
-public sealed class ActiveWindowService
+public sealed class ActiveWindowService : IActiveWindowService
 {
     private ActiveWindowInfo? _cached;
     private long _cacheValidUntil;
@@ -24,6 +25,8 @@ public sealed class ActiveWindowService
         _cacheValidUntil = now + 200;
         return _cached;
     }
+
+    public nint GetActiveWindowHandle() => GetActiveWindow().Handle;
 
     private static bool IsNativePasswordField(uint thread)
     {

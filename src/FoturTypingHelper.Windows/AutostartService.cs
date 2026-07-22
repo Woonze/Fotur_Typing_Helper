@@ -1,8 +1,9 @@
 using Microsoft.Win32;
+using FoturTypingHelper.Core;
 
 namespace FoturTypingHelper.Windows;
 
-public sealed class AutostartService
+public sealed class AutostartService : IAutostartService
 {
     private const string KeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string ValueName = "FoturTypingHelper";

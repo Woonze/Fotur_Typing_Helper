@@ -4,18 +4,19 @@ using Avalonia.Interactivity;
 using Avalonia.Input;
 using Avalonia.Media;
 using FoturTypingHelper.Core;
-using FoturTypingHelper.Windows;
+using System.Reflection;
 
 namespace FoturTypingHelper.App;
 
 public partial class MainWindow : Window
 {
     private readonly SettingsStore _store;
-    private readonly AutostartService _autostart;
+    private readonly IAutostartService _autostart;
     private readonly AppRuntime _runtime;
+    private IReadOnlyList<AudioDeviceInfo> _microphones = [];
     private bool _loading = true;
 
-    public MainWindow(SettingsStore store, AutostartService autostart, AppRuntime runtime)
+    public MainWindow(SettingsStore store, IAutostartService autostart, AppRuntime runtime)
     {
         _store = store; _autostart = autostart; _runtime = runtime;
         InitializeComponent(); Icon = IconFactory.Create(); LoadSettings();
@@ -23,6 +24,7 @@ public partial class MainWindow : Window
         PropertyChanged += (_, e) => { if (e.Property == WindowStateProperty && WindowState == WindowState.Minimized && _store.State.Settings.MinimizeToTray) Hide(); };
         _runtime.StatusChanged += (_, text) => Avalonia.Threading.Dispatcher.UIThread.Post(() => StatusText.Text = text);
         _runtime.StatisticsChanged += (_, _) => Avalonia.Threading.Dispatcher.UIThread.Post(UpdateStatistics);
+        _runtime.MicrophoneLevelChanged += (_, level) => Avalonia.Threading.Dispatcher.UIThread.Post(() => MicrophoneLevelBar.Value = level);
     }
 
     public void Restore() { Show(); WindowState = WindowState.Normal; Activate(); }
@@ -33,11 +35,19 @@ public partial class MainWindow : Window
         DictationToggle.IsChecked = DictationEnabledSettings.IsChecked = s.DictationEnabled;
         EarlyCorrectionCheck.IsChecked = s.EarlyCorrection; ConfidenceSlider.Value = s.CorrectionConfidence;
         VoiceCommandsCheck.IsChecked = s.VoiceCommandsEnabled; AutostartToggle.IsChecked = s.StartWithWindows;
+        AutoUpdateToggle.IsChecked = s.AutoUpdateEnabled;
+        VadToggle.IsChecked = s.VoiceActivityDetectionEnabled;
+        NoiseToggle.IsChecked = s.NoiseSuppressionEnabled;
+        DictionaryPromptToggle.IsChecked = s.DictionaryPromptEnabled;
+        FillerToggle.IsChecked = s.FillerWordsRemovalEnabled;
         TrayToggle.IsChecked = s.MinimizeToTray; StatisticsToggle.IsChecked = s.LocalStatisticsEnabled;
         HotkeyModeCombo.SelectedIndex = s.DictationHotkeyMode == DictationHotkeyMode.Hold ? 0 : 1;
         ModelCombo.SelectedIndex = s.SpeechModel switch { "tiny" => 0, "small" => 2, "medium" => 3, _ => 1 };
         SpeechLanguageCombo.SelectedIndex = s.SpeechLanguage switch { "ru" => 1, "en" => 2, _ => 0 };
         TranslationToggle.IsChecked = s.DictationTaskMode == DictationTaskMode.TranslateToEnglish;
+        _microphones = _runtime.Microphones;
+        MicrophoneCombo.ItemsSource = _microphones.Select(device => device.IsDefault ? $"{device.Name} · по умолчанию" : device.Name).ToArray();
+        MicrophoneCombo.SelectedIndex = Math.Max(0, _microphones.ToList().FindIndex(device => device.Number == s.MicrophoneDeviceNumber));
         DictionaryList.ItemsSource = s.CustomDictionary.ToArray();
         ExcludedProcessesText.Text = string.Join(Environment.NewLine, s.ExcludedProcesses);
         DictationHotkeyBox.Text = s.DictationHotkey;
@@ -45,6 +55,11 @@ public partial class MainWindow : Window
         UpdateHotkeyLabels();
         ConfidenceValueText.Text = $"{s.CorrectionConfidence:P0}";
         ModelStatusText.Text = $"Whisper {s.SpeechModel} · " + (_runtime.IsModelInstalled ? "готова" : "загрузится при первом запуске");
+        var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.0";
+        var platform = OperatingSystem.IsMacOS()
+            ? (System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "macOS Apple Silicon" : "macOS Intel")
+            : "Windows x64";
+        AboutVersionText.Text = $"Версия {version} · 23 июля 2026 · MIT · {platform}";
         UpdateStatistics(); _loading = false;
     }
 
@@ -62,6 +77,11 @@ public partial class MainWindow : Window
         s.AutoCorrectionEnabled = AutoCorrectionToggle.IsChecked == true; s.DictationEnabled = DictationToggle.IsChecked == true;
         s.EarlyCorrection = EarlyCorrectionCheck.IsChecked == true; s.CorrectionConfidence = ConfidenceSlider.Value;
         s.VoiceCommandsEnabled = VoiceCommandsCheck.IsChecked == true; s.StartWithWindows = AutostartToggle.IsChecked == true;
+        s.AutoUpdateEnabled = AutoUpdateToggle.IsChecked == true;
+        s.VoiceActivityDetectionEnabled = VadToggle.IsChecked == true;
+        s.NoiseSuppressionEnabled = NoiseToggle.IsChecked == true;
+        s.DictionaryPromptEnabled = DictionaryPromptToggle.IsChecked == true;
+        s.FillerWordsRemovalEnabled = FillerToggle.IsChecked == true;
         s.MinimizeToTray = TrayToggle.IsChecked == true; s.LocalStatisticsEnabled = StatisticsToggle.IsChecked == true;
         s.DictationHotkeyMode = HotkeyModeCombo.SelectedIndex == 1 ? DictationHotkeyMode.Toggle : DictationHotkeyMode.Hold;
         s.SpeechModel = ModelCombo.SelectedIndex switch { 0 => "tiny", 2 => "small", 3 => "medium", _ => "base" };
@@ -69,6 +89,8 @@ public partial class MainWindow : Window
         s.DictationTaskMode = TranslationToggle.IsChecked == true
             ? DictationTaskMode.TranslateToEnglish
             : DictationTaskMode.Transcribe;
+        if (MicrophoneCombo.SelectedIndex >= 0 && MicrophoneCombo.SelectedIndex < _microphones.Count)
+            s.MicrophoneDeviceNumber = _microphones[MicrophoneCombo.SelectedIndex].Number;
         ConfidenceValueText.Text = $"{s.CorrectionConfidence:P0}";
         _store.Save(); _autostart.SetEnabled(s.StartWithWindows); _runtime.RefreshSettings();
     }

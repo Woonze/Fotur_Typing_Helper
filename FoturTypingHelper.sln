@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FoturTypingHelper.BrowserSm
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FoturTypingHelper.DictationSmoke", "tests\FoturTypingHelper.DictationSmoke\FoturTypingHelper.DictationSmoke.csproj", "{30914637-D44B-4CF4-BC1E-7595FAD74413}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FoturTypingHelper.Mac", "src\FoturTypingHelper.Mac\FoturTypingHelper.Mac.csproj", "{239687DB-6A08-4689-9F08-5C55664DD136}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -52,6 +54,10 @@ Global
 		{30914637-D44B-4CF4-BC1E-7595FAD74413}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{30914637-D44B-4CF4-BC1E-7595FAD74413}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{30914637-D44B-4CF4-BC1E-7595FAD74413}.Release|Any CPU.Build.0 = Release|Any CPU
+		{239687DB-6A08-4689-9F08-5C55664DD136}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{239687DB-6A08-4689-9F08-5C55664DD136}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{239687DB-6A08-4689-9F08-5C55664DD136}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{239687DB-6A08-4689-9F08-5C55664DD136}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{F352D561-0CFF-4F88-859C-6A1BB1D7CA5C} = {C879EAD3-8A0C-4792-AB0D-460E7C88EFCA}
@@ -60,5 +66,6 @@ Global
 		{8CC43476-5D07-4192-9F26-10EA8960DF77} = {E176A655-D794-46D6-B0CB-24E94C58D8BA}
 		{9CA55A52-12C1-41C0-A4EA-832338C6735E} = {E176A655-D794-46D6-B0CB-24E94C58D8BA}
 		{30914637-D44B-4CF4-BC1E-7595FAD74413} = {E176A655-D794-46D6-B0CB-24E94C58D8BA}
+		{239687DB-6A08-4689-9F08-5C55664DD136} = {C879EAD3-8A0C-4792-AB0D-460E7C88EFCA}
 	EndGlobalSection
 EndGlobal

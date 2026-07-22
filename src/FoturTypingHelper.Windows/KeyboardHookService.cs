@@ -5,9 +5,7 @@ using FoturTypingHelper.Core;
 
 namespace FoturTypingHelper.Windows;
 
-public sealed record CorrectionApplied(string Original, string Replacement, double Confidence);
-
-public sealed class KeyboardHookService : IDisposable
+public sealed class KeyboardHookService : IKeyboardService
 {
     private readonly AppSettings _settings;
     private readonly ActiveWindowService _activeWindow;

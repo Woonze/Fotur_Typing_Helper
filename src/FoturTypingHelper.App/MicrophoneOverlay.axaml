@@ -1,7 +1,0 @@
-<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
- x:Class="FoturTypingHelper.App.MicrophoneOverlay" Width="310" Height="82" CanResize="False"
- SystemDecorations="None" ShowInTaskbar="False" Topmost="True" Background="Transparent">
- <Border Background="#F20B1012" BorderBrush="#8062FFF7" BorderThickness="1" CornerRadius="24" Padding="16">
-  <Grid ColumnDefinitions="Auto,*,Auto"><Border Width="46" Height="46" CornerRadius="23" Background="#62FFF7"><TextBlock Text="●" Foreground="#071416" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><StackPanel Grid.Column="1" Margin="14,0" VerticalAlignment="Center"><TextBlock x:Name="OverlayTitle" Text="Слушаю…" FontWeight="Bold" FontSize="15"/><TextBlock x:Name="OverlaySubtitle" Text="Ctrl + Alt + Space" Classes="muted" FontSize="11"/></StackPanel><TextBlock Grid.Column="2" Text="RU↔EN" Foreground="#FF6BE6" FontWeight="Bold" VerticalAlignment="Center"/></Grid>
- </Border>
-</Window>

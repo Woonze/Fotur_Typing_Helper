@@ -3,7 +3,7 @@ using FoturTypingHelper.Core;
 
 namespace FoturTypingHelper.Windows;
 
-public sealed class TextInjectionService
+public sealed class TextInjectionService : ITextInjectionService
 {
     internal static readonly UIntPtr InjectionMarker = new(0xF07A2026u);
 

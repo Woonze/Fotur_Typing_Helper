@@ -15,6 +15,14 @@ public sealed class AppSettings
     public bool EarlyCorrection { get; set; }
     public double CorrectionConfidence { get; set; } = 0.72;
     public bool VoiceCommandsEnabled { get; set; } = true;
+    public bool VoiceActivityDetectionEnabled { get; set; } = true;
+    public bool NoiseSuppressionEnabled { get; set; } = true;
+    public bool LongSpeechSegmentationEnabled { get; set; } = true;
+    public bool DictionaryPromptEnabled { get; set; } = true;
+    public bool StreamingPreviewEnabled { get; set; } = true;
+    public bool FillerWordsRemovalEnabled { get; set; }
+    public double VoiceActivityThreshold { get; set; } = 0.018;
+    public bool AutoUpdateEnabled { get; set; } = true;
     public bool LocalStatisticsEnabled { get; set; } = true;
     public bool MinimizeToTray { get; set; } = true;
     public string UiLanguage { get; set; } = "ru";
@@ -23,8 +31,9 @@ public sealed class AppSettings
     public DictationOutputMode DictationOutputMode { get; set; } = DictationOutputMode.Accurate;
     public string DictationHotkey { get; set; } = "Ctrl+Alt+Space";
     public string UndoHotkey { get; set; } = "Ctrl+Alt+Backspace";
-    public string SpeechModel { get; set; } = "base";
+    public string SpeechModel { get; set; } = "small";
     public string SpeechLanguage { get; set; } = "auto";
+    public string TranslationTargetLanguage { get; set; } = "en";
     public DictationTaskMode DictationTaskMode { get; set; } = DictationTaskMode.Transcribe;
     public int MicrophoneDeviceNumber { get; set; } = 0;
     public List<string> CustomDictionary { get; set; } = [];

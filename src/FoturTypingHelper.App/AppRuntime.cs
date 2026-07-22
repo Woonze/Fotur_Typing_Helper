@@ -1,36 +1,39 @@
 using Avalonia.Threading;
 using FoturTypingHelper.Core;
-using FoturTypingHelper.Windows;
 
 namespace FoturTypingHelper.App;
 
 public sealed class AppRuntime : IDisposable
 {
     private readonly SettingsStore _store;
-    private readonly KeyboardHookService _keyboard;
-    private readonly AudioRecorder _recorder;
-    private readonly LocalDictationService _dictation;
-    private readonly TextInjectionService _injection;
-    private readonly ActiveWindowService _activeWindow;
-    private MicrophoneOverlay? _overlay;
+    private readonly IKeyboardService _keyboard;
+    private readonly IAudioRecorder _recorder;
+    private readonly IDictationService _dictation;
+    private readonly ITextInjectionService _injection;
+    private readonly IActiveWindowService _activeWindow;
+    private ScreenEdgeOverlay? _overlay;
     private bool _hotkeyDown;
     private bool _busy;
     private IntPtr _dictationTarget;
     public event EventHandler<string>? StatusChanged;
     public event EventHandler? StatisticsChanged;
+    public event EventHandler<double>? MicrophoneLevelChanged;
+    public IReadOnlyList<AudioDeviceInfo> Microphones => _recorder.GetDevices();
     public bool IsModelInstalled => _dictation.IsModelInstalled(_store.State.Settings.SpeechModel);
 
-    public AppRuntime(SettingsStore store, KeyboardHookService keyboard, AudioRecorder recorder,
-        LocalDictationService dictation, TextInjectionService injection, ActiveWindowService activeWindow)
+    public AppRuntime(SettingsStore store, IKeyboardService keyboard, IAudioRecorder recorder,
+        IDictationService dictation, ITextInjectionService injection, IActiveWindowService activeWindow)
     {
         _store = store; _keyboard = keyboard; _recorder = recorder; _dictation = dictation; _injection = injection; _activeWindow = activeWindow;
         _keyboard.Corrected += OnCorrected;
         _keyboard.DictationHotkeyChanged += OnHotkey;
         _dictation.DownloadProgress += (_, progress) => StatusChanged?.Invoke(this, $"Загрузка модели: {progress:P0}");
+        _recorder.LevelChanged += (_, level) => MicrophoneLevelChanged?.Invoke(this, level);
     }
 
     public void Start() => _keyboard.Start();
     public void RefreshSettings() => _keyboard.RefreshSettings();
+    public void ReportStatus(string text) => StatusChanged?.Invoke(this, text);
 
     private void OnCorrected(object? sender, CorrectionApplied correction)
     {
@@ -74,10 +77,9 @@ public sealed class AppRuntime : IDisposable
         if (_busy || _recorder.IsRecording) return Task.CompletedTask;
         try
         {
-            _dictationTarget = _activeWindow.GetActiveWindow().Handle;
+            _dictationTarget = _activeWindow.GetActiveWindowHandle();
             _recorder.Start(_store.State.Settings.MicrophoneDeviceNumber);
-            _overlay = new MicrophoneOverlay { ShowActivated = false };
-            _overlay.Show();
+            _overlay = ScreenEdgeOverlay.ShowRecording();
             StatusChanged?.Invoke(this, "Слушаю микрофон…");
         }
         catch (Exception ex)
@@ -117,7 +119,7 @@ public sealed class AppRuntime : IDisposable
             DiagnosticLog.Write("Dictation", ex);
             StatusChanged?.Invoke(this, "Ошибка диктовки: " + ex.Message);
         }
-        finally { _overlay?.Close(); _overlay = null; _busy = false; }
+        finally { _overlay?.Dispose(); _overlay = null; _busy = false; }
     }
 
     public void Dispose() { _keyboard.Dispose(); _recorder.Dispose(); }

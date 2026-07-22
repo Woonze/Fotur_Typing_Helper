@@ -42,14 +42,29 @@ public sealed class AppRuntime : IDisposable
 
     private void OnHotkey(object? sender, bool isDown)
     {
-        if (!_store.State.Settings.DictationEnabled) return;
+        if (!_store.State.Settings.DictationEnabled)
+        {
+            _hotkeyDown = false;
+            return;
+        }
         if (_store.State.Settings.DictationHotkeyMode == DictationHotkeyMode.Hold)
         {
-            if (isDown && !_hotkeyDown) Dispatcher.UIThread.Post(() => _ = StartDictationAsync());
-            if (!isDown && _hotkeyDown) Dispatcher.UIThread.Post(() => _ = StopDictationAsync());
+            if (isDown && !_hotkeyDown)
+            {
+                _hotkeyDown = true;
+                Dispatcher.UIThread.Post(() => _ = StartDictationAsync());
+            }
+            else if (!isDown)
+            {
+                _hotkeyDown = false;
+                Dispatcher.UIThread.Post(() => _ = StopDictationAsync());
+            }
         }
-        else if (isDown && !_hotkeyDown) Dispatcher.UIThread.Post(() => _ = ToggleDictationAsync());
-        _hotkeyDown = isDown;
+        else
+        {
+            if (isDown && !_hotkeyDown) Dispatcher.UIThread.Post(() => _ = ToggleDictationAsync());
+            _hotkeyDown = isDown;
+        }
     }
 
     public Task ToggleDictationAsync() => _recorder.IsRecording ? StopDictationAsync() : StartDictationAsync();

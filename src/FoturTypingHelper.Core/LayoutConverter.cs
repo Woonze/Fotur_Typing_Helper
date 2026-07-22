@@ -12,6 +12,7 @@ public static class LayoutConverter
 
     public static string ToRussian(string text) => Convert(text, EnToRu);
     public static string ToEnglish(string text) => Convert(text, RuToEn);
+    public static bool IsConvertible(char character) => EnToRu.ContainsKey(character) || RuToEn.ContainsKey(character);
 
     private static string Convert(string text, IReadOnlyDictionary<char, char> map) =>
         string.Create(text.Length, (text, map), static (span, state) =>

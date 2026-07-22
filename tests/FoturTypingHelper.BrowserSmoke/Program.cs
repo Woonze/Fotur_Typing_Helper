@@ -24,13 +24,22 @@ if (chrome is null)
 var testPage = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "input-test.html"));
 var profile = Path.Combine(Path.GetTempPath(), $"fotur-browser-smoke-{Environment.ProcessId}");
 var settingsRoot = Path.Combine(profile, "fotur-settings");
+var readyFile = Path.Combine(settingsRoot, "ready");
 Directory.CreateDirectory(settingsRoot);
 await File.WriteAllTextAsync(Path.Combine(settingsRoot, "settings.json"),
     """{"Settings":{"AutoCorrectionEnabled":true,"EarlyCorrection":false,"CorrectionConfidence":0.72}}""");
 var foturStart = new ProcessStartInfo(args[0]) { UseShellExecute = false };
 foturStart.Environment["FOTUR_SETTINGS_ROOT"] = settingsRoot;
+foturStart.Environment["FOTUR_INSTANCE_ID"] = $"browser-smoke-{Environment.ProcessId}";
+foturStart.Environment["FOTUR_READY_FILE"] = readyFile;
 using var fotur = Process.Start(foturStart);
-await Task.Delay(1500);
+for (var attempt = 0; attempt < 100 && !File.Exists(readyFile); attempt++)
+{
+    if (fotur?.HasExited == true)
+        throw new InvalidOperationException($"Fotur exited before the keyboard hook was ready ({fotur.ExitCode}).");
+    await Task.Delay(100);
+}
+if (!File.Exists(readyFile)) throw new TimeoutException("Fotur keyboard hook did not become ready in 10 seconds.");
 using var browser = Process.Start(new ProcessStartInfo(chrome)
 {
     UseShellExecute = false,
@@ -55,8 +64,13 @@ if (window == IntPtr.Zero)
     return 4;
 }
 
-Native.ShowWindow(window, 9);
-Native.SetForegroundWindow(window);
+if (!FocusWindow(window))
+{
+    Console.Error.WriteLine("Chrome test window could not become foreground.");
+    TryStop(browser);
+    TryStop(fotur);
+    return 5;
+}
 var english = Native.LoadKeyboardLayout("00000409", 1);
 Native.PostMessage(window, 0x0050, IntPtr.Zero, english);
 await Task.Delay(500);
@@ -65,7 +79,9 @@ var scenarios = new[]
 {
     (Keys: "ghbdtn rfr ltkf ", Expected: "привет как дела"),
     (Keys: "rjulf z ghble ljvjq ", Expected: "когда я приду домой"),
-    (Keys: "lfdfq gjghj,etv rfr ,scnhj hf,jnftn ghjuhfvvf ", Expected: "давай попробуем как быстро работает программа")
+    (Keys: "lfdfq gjghj,etv rfr ,scnhj hf,jnftn ghjuhfvvf ", Expected: "давай попробуем как быстро работает программа"),
+    (Keys: "Z ,s [jntk ", Expected: "Я бы хотел"),
+    (Keys: "Rbhbkk ", Expected: "Кирилл")
 };
 
 var failed = false;
@@ -97,15 +113,46 @@ return failed ? 1 : 0;
 
 void ClearField()
 {
+    if (!FocusWindow(window)) throw new InvalidOperationException("Chrome lost foreground focus.");
+    if (Native.GetWindowRect(window, out var rect))
+    {
+        Native.SetCursorPos((rect.Left + rect.Right) / 2, (rect.Top + rect.Bottom) / 2);
+        Native.MouseEvent(0x0002, 0, 0, 0, UIntPtr.Zero);
+        Native.MouseEvent(0x0004, 0, 0, 0, UIntPtr.Zero);
+    }
+    Thread.Sleep(100);
     SendChord(0x11, 0x41);
     SendVirtualKey(0x08);
     Thread.Sleep(150);
+}
+
+bool FocusWindow(IntPtr handle)
+{
+    for (var attempt = 0; attempt < 12; attempt++)
+    {
+        Native.ShowWindow(handle, 9);
+        Native.SetWindowPos(handle, new IntPtr(-1), 0, 0, 0, 0, 0x0003);
+        Native.SetWindowPos(handle, new IntPtr(-2), 0, 0, 0, 0, 0x0003);
+        Native.BringWindowToTop(handle);
+        Native.SetForegroundWindow(handle);
+        if (Native.GetWindowRect(handle, out var rect))
+        {
+            Native.SetCursorPos((rect.Left + rect.Right) / 2, (rect.Top + rect.Bottom) / 2);
+            Native.MouseEvent(0x0002, 0, 0, 0, UIntPtr.Zero);
+            Native.MouseEvent(0x0004, 0, 0, 0, UIntPtr.Zero);
+        }
+        if (Native.GetForegroundWindow() == handle) return true;
+        Thread.Sleep(100);
+    }
+    return false;
 }
 
 void SendKey(char character)
 {
     if (character == ' ') { SendVirtualKey(0x20); return; }
     if (character == ',') { SendVirtualKey(0xBC); return; }
+    if (character == '[') { SendVirtualKey(0xDB); return; }
+    if (character is >= 'A' and <= 'Z') { SendChord(0x10, character); return; }
     if (character is >= 'a' and <= 'z') { SendVirtualKey(char.ToUpperInvariant(character)); return; }
     throw new InvalidOperationException($"Unsupported test character: {character}");
 }
@@ -195,10 +242,17 @@ struct HardwareInput
 
 static class Native
 {
+    [StructLayout(LayoutKind.Sequential)] internal struct Rect { internal int Left, Top, Right, Bottom; }
     internal delegate bool EnumWindowsProc(IntPtr window, IntPtr parameter);
     [DllImport("user32.dll")] internal static extern bool EnumWindows(EnumWindowsProc callback, IntPtr parameter);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] internal static extern int GetWindowText(IntPtr window, StringBuilder text, int maxCount);
     [DllImport("user32.dll")] internal static extern bool SetForegroundWindow(IntPtr window);
+    [DllImport("user32.dll")] internal static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll")] internal static extern bool BringWindowToTop(IntPtr window);
+    [DllImport("user32.dll")] internal static extern bool SetWindowPos(IntPtr window, IntPtr insertAfter, int x, int y, int width, int height, uint flags);
+    [DllImport("user32.dll")] internal static extern bool GetWindowRect(IntPtr window, out Rect rect);
+    [DllImport("user32.dll")] internal static extern bool SetCursorPos(int x, int y);
+    [DllImport("user32.dll", EntryPoint = "mouse_event")] internal static extern void MouseEvent(uint flags, uint x, uint y, uint data, UIntPtr extraInfo);
     [DllImport("user32.dll")] internal static extern bool ShowWindow(IntPtr window, int command);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] internal static extern IntPtr LoadKeyboardLayout(string id, uint flags);
     [DllImport("user32.dll")] internal static extern bool PostMessage(IntPtr window, uint message, IntPtr wParam, IntPtr lParam);

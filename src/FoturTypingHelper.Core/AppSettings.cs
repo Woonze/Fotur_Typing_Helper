@@ -4,6 +4,7 @@ namespace FoturTypingHelper.Core;
 
 public enum DictationHotkeyMode { Hold, Toggle }
 public enum DictationOutputMode { Accurate, Fast }
+public enum DictationTaskMode { Transcribe, TranslateToEnglish }
 public enum AppTheme { System, Dark, Light }
 
 public sealed class AppSettings
@@ -24,6 +25,7 @@ public sealed class AppSettings
     public string UndoHotkey { get; set; } = "Ctrl+Alt+Backspace";
     public string SpeechModel { get; set; } = "base";
     public string SpeechLanguage { get; set; } = "auto";
+    public DictationTaskMode DictationTaskMode { get; set; } = DictationTaskMode.Transcribe;
     public int MicrophoneDeviceNumber { get; set; } = 0;
     public List<string> CustomDictionary { get; set; } = [];
     public List<string> ExcludedProcesses { get; set; } =

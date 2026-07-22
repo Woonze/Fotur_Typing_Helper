@@ -1,13 +1,13 @@
 ﻿using Avalonia;
 using System;
 using System.Runtime.Versioning;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace FoturTypingHelper.App;
 
 class Program
 {
-    private const string MutexName = @"Local\FoturTypingHelper.SingleInstance";
-    private const string ActivateEventName = @"Local\FoturTypingHelper.Activate";
     // Initialization code. Don't use any Avalonia, third-party APIs or any
     // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
     // yet and stuff might break.
@@ -30,15 +30,18 @@ class Program
             return;
         }
 
-        using var mutex = new Mutex(true, MutexName, out var isFirstInstance);
+        var instanceSuffix = InstanceSuffix();
+        var mutexName = @"Local\FoturTypingHelper.SingleInstance" + instanceSuffix;
+        var activateEventName = @"Local\FoturTypingHelper.Activate" + instanceSuffix;
+        using var mutex = new Mutex(true, mutexName, out var isFirstInstance);
         if (!isFirstInstance)
         {
             FoturTypingHelper.Windows.ExistingInstanceActivator.TryActivate();
-            try { EventWaitHandle.OpenExisting(ActivateEventName).Set(); } catch { }
+            try { EventWaitHandle.OpenExisting(activateEventName).Set(); } catch { }
             return;
         }
 
-        using var activateEvent = new EventWaitHandle(false, EventResetMode.AutoReset, ActivateEventName);
+        using var activateEvent = new EventWaitHandle(false, EventResetMode.AutoReset, activateEventName);
         _ = Task.Run(() =>
         {
             while (true)
@@ -57,4 +60,12 @@ class Program
             .UsePlatformDetect()
             .WithInterFont()
             .LogToTrace();
+
+    private static string InstanceSuffix()
+    {
+        var id = Environment.GetEnvironmentVariable("FOTUR_INSTANCE_ID");
+        if (string.IsNullOrWhiteSpace(id)) return "";
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(id));
+        return "." + Convert.ToHexString(hash, 0, 6);
+    }
 }

@@ -8,6 +8,8 @@ public sealed class LayoutCorrectionTests
     [InlineData("ghbdtn", "привет")]
     [InlineData("руддщ", "hello")]
     [InlineData("Rfr ltkf?", "Как дела?")]
+    [InlineData("Z ,s [jntk", "Я бы хотел")]
+    [InlineData("Rbhbkk", "Кирилл")]
     public void LayoutConverter_MapsPhysicalKeys(string source, string expected)
     {
         var result = source.Any(c => c is >= 'А' and <= 'я')

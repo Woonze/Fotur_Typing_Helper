@@ -24,10 +24,11 @@
     </Style>
     <Style Selector="Button.nav:pointerover /template/ ContentPresenter"><Setter Property="Background" Value="#11181B" /></Style>
     <Style Selector="Button.nav.active"><Setter Property="Background" Value="#142125" /><Setter Property="Foreground" Value="#FFFFFF" /></Style>
+    <Style Selector="Button.nav PathIcon"><Setter Property="Width" Value="17" /><Setter Property="Height" Value="17" /></Style>
     <Style Selector="Button.info">
       <Setter Property="Width" Value="22" /><Setter Property="Height" Value="22" /><Setter Property="Padding" Value="0" />
       <Setter Property="CornerRadius" Value="11" /><Setter Property="Background" Value="#172125" />
-      <Setter Property="Foreground" Value="#8FA2A9" /><Setter Property="FontSize" Value="11" />
+      <Setter Property="Foreground" Value="#8FA2A9" /><Setter Property="FontSize" Value="11" /><Setter Property="FontWeight" Value="Bold" />
       <Setter Property="HorizontalContentAlignment" Value="Center" /><Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
     <Style Selector="Border.card">

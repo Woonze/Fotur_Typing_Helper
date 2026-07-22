@@ -16,7 +16,7 @@ dotnet test
 dotnet run --project tests/FoturTypingHelper.BrowserSmoke -c Release -- artifacts/publish/FoturTypingHelper.App.exe
 ```
 
-Тест вводит три EN→RU фразы с задержкой 42 мс между клавишами и проверяет значение браузерного поля, включая замену предыдущих слов.
+Тест вводит пять EN→RU фраз с задержкой 42 мс между клавишами и проверяет значение браузерного поля, включая замену предыдущих слов, заглавные буквы и OEM-клавиши.
 
 Полный локальный цикл диктовки с микрофоном и установленной моделью проверяется так:
 
@@ -25,7 +25,7 @@ dotnet run --project tests/FoturTypingHelper.DictationSmoke -c Release
 ```
 
 Результаты: `artifacts/publish/FoturTypingHelper.App.exe` и
-`artifacts/installer/FoturTypingHelper-Setup-0.2.0-win-x64.exe`.
+`artifacts/installer/FoturTypingHelper-Setup-0.3.0-win-x64.exe`.
 
 Установщик поддерживает русский и английский интерфейс, выбор каталога,
 ярлыки и опцию автозапуска. До приобретения сертификата Windows SmartScreen может

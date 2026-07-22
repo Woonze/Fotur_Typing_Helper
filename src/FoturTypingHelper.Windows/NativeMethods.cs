@@ -22,6 +22,7 @@ internal static class NativeMethods
     internal const int VkReturn = 0x0D;
     internal const int VkSpace = 0x20;
     internal const int VkEscape = 0x1B;
+    internal const int VkCapital = 0x14;
     internal const int VkLControl = 0xA2;
     internal const int VkRControl = 0xA3;
     internal const int VkLShift = 0xA0;
@@ -112,11 +113,15 @@ internal static class NativeMethods
     [DllImport("user32.dll")]
     internal static extern short GetAsyncKeyState(int virtualKey);
     [DllImport("user32.dll")]
+    internal static extern short GetKeyState(int virtualKey);
+    [DllImport("user32.dll")]
     internal static extern IntPtr GetForegroundWindow();
     [DllImport("user32.dll")]
     internal static extern uint GetWindowThreadProcessId(IntPtr window, out uint processId);
     [DllImport("user32.dll")]
     internal static extern IntPtr GetKeyboardLayout(uint threadId);
+    [DllImport("user32.dll")]
+    internal static extern uint MapVirtualKeyEx(uint code, uint mapType, IntPtr keyboardLayout);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     internal static extern int ToUnicodeEx(uint virtualKey, uint scanCode, byte[] keyboardState,
         [Out] StringBuilder buffer, int bufferLength, uint flags, IntPtr keyboardLayout);

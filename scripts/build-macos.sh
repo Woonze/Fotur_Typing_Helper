@@ -62,6 +62,9 @@ ditto -c -k --sequesterRsrc --keepParent "$app" "$zip_path"
 ln -s /Applications "$stage/Applications"
 hdiutil create -volname "Fotur Typing Helper" -srcfolder "$stage" -ov -format UDZO "$dmg_path"
 
-shasum -a 256 "$zip_path" "$dmg_path" > "$artifacts/SHA256SUMS-macos-$arch.txt"
+(
+  cd "$artifacts"
+  shasum -a 256 "$(basename "$zip_path")" "$(basename "$dmg_path")" > "SHA256SUMS-macos-$arch.txt"
+)
 file "$contents/MacOS/FoturTypingHelper.App" "$native_library"
 echo "Created $dmg_path and $zip_path"

@@ -35,8 +35,15 @@ public partial class App : Application
             {
                 try
                 {
-                    var updateStatus = await new GitHubUpdateService().CheckAndInstallAsync(store.State.Settings);
-                    if (updateStatus is not null) _runtime.ReportStatus(updateStatus);
+                    var update = await new GitHubUpdateService().CheckAndInstallAsync(store.State.Settings);
+                    if (update is not null) _runtime.ReportStatus(update.Message);
+                    if (update?.Restarting == true)
+                        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                        {
+                            ExitRequested = true;
+                            _window?.Close();
+                            desktop.Shutdown();
+                        });
                 }
                 catch (Exception ex) { DiagnosticLog.Write("AutoUpdate", ex); _runtime.ReportStatus("Не удалось проверить обновления"); }
             });

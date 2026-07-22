@@ -10,10 +10,11 @@ namespace FoturTypingHelper.App;
 
 internal sealed class GitHubUpdateService
 {
+    internal sealed record UpdateResult(string Message, bool Restarting = false);
     private const string LatestRelease = "https://api.github.com/repos/Woonze/Fotur_Typing_Helper/releases/latest";
     private readonly HttpClient _http = new() { DefaultRequestHeaders = { { "User-Agent", "Fotur-Typing-Helper-Updater" } } };
 
-    public async Task<string?> CheckAndInstallAsync(AppSettings settings, CancellationToken token = default)
+    public async Task<UpdateResult?> CheckAndInstallAsync(AppSettings settings, CancellationToken token = default)
     {
         if (!settings.AutoUpdateEnabled) return null;
         using var response = await _http.GetAsync(LatestRelease, token); response.EnsureSuccessStatusCode();
@@ -21,7 +22,7 @@ internal sealed class GitHubUpdateService
         var tag = json.RootElement.GetProperty("tag_name").GetString()?.TrimStart('v');
         if (!Version.TryParse(tag, out var remote)) return null;
         var local = Assembly.GetExecutingAssembly().GetName().Version ?? new Version(0, 0);
-        if (remote <= local) return "Установлена актуальная версия";
+        if (remote <= local) return new("Установлена актуальная версия");
 
         var suffix = OperatingSystem.IsWindows() ? "win-x64.exe"
             : RuntimeInformation.ProcessArchitecture == Architecture.Arm64 ? "macos-arm64.zip" : "macos-x64.zip";
@@ -32,7 +33,7 @@ internal sealed class GitHubUpdateService
         var sums = assets.FirstOrDefault(a => a.GetProperty("name").GetString() == checksumName);
         if (sums.ValueKind == JsonValueKind.Undefined)
             sums = assets.FirstOrDefault(a => a.GetProperty("name").GetString() == "SHA256SUMS.txt");
-        if (asset.ValueKind == JsonValueKind.Undefined || sums.ValueKind == JsonValueKind.Undefined) return "Обновление найдено, но пакет платформы отсутствует";
+        if (asset.ValueKind == JsonValueKind.Undefined || sums.ValueKind == JsonValueKind.Undefined) return new("Обновление найдено, но пакет платформы отсутствует");
         var name = asset.GetProperty("name").GetString()!;
         var temp = Path.Combine(Path.GetTempPath(), name);
         await Download(asset.GetProperty("browser_download_url").GetString()!, temp, token);
@@ -42,7 +43,7 @@ internal sealed class GitHubUpdateService
         var actual = Convert.ToHexString(await SHA256.HashDataAsync(packageStream, token));
         if (expected is null || !actual.Equals(expected, StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("Контрольная сумма обновления не совпадает.");
         Install(temp, remote.ToString(3));
-        return $"Обновление {remote.ToString(3)} загружено и устанавливается";
+        return new($"Обновление {remote.ToString(3)} загружено и устанавливается", true);
     }
 
     private async Task Download(string url, string path, CancellationToken token)
@@ -68,7 +69,7 @@ internal sealed class GitHubUpdateService
         var current = ShellQuote(bundle);
         var next = ShellQuote(bundle + ".new");
         var old = ShellQuote(bundle + ".old");
-        File.WriteAllText(script, $"#!/bin/sh\nsleep 2\nrm -rf {next}\n/usr/bin/ditto {ShellQuote(newBundle)} {next}\nmv {current} {old}\nmv {next} {current}\nopen {current}\nrm -rf {old}\n");
+        File.WriteAllText(script, $"#!/bin/sh\nset -e\nsleep 2\nrm -rf {next} {old}\n/usr/bin/ditto {ShellQuote(newBundle)} {next}\nmv {current} {old}\nif mv {next} {current}; then\n  open {current}\n  rm -rf {old}\nelse\n  mv {old} {current}\n  exit 1\nfi\n");
         Process.Start(new ProcessStartInfo("/bin/sh", script) { UseShellExecute = false });
     }
 

@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <Version>0.2.0</Version>
+    <Authors>Fotur</Authors>
+    <Company>Fotur</Company>
+    <Product>Fotur Typing Helper</Product>
+    <Copyright>Copyright © Fotur 2026</Copyright>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+</Project>

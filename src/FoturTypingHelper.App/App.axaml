@@ -1,0 +1,55 @@
+<Application xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="FoturTypingHelper.App.App" RequestedThemeVariant="Dark">
+  <Application.Styles>
+    <FluentTheme />
+    <Style Selector="Window">
+      <Setter Property="FontFamily" Value="Inter, Segoe UI" />
+      <Setter Property="Background" Value="#06080A" />
+      <Setter Property="Foreground" Value="#F4F7F8" />
+    </Style>
+    <Style Selector="Button">
+      <Setter Property="CornerRadius" Value="11" /><Setter Property="Padding" Value="16,10" />
+      <Setter Property="FontWeight" Value="SemiBold" /><Setter Property="FontSize" Value="13" />
+    </Style>
+    <Style Selector="Button.primary">
+      <Setter Property="Background" Value="#62FFF7" /><Setter Property="Foreground" Value="#031113" />
+    </Style>
+    <Style Selector="Button.secondary">
+      <Setter Property="Background" Value="#11171A" /><Setter Property="Foreground" Value="#DCE4E7" />
+      <Setter Property="BorderBrush" Value="#28353A" /><Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="Button.nav">
+      <Setter Property="HorizontalContentAlignment" Value="Left" /><Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="#8F9BA0" /><Setter Property="Padding" Value="14,12" /><Setter Property="CornerRadius" Value="12" />
+    </Style>
+    <Style Selector="Button.nav:pointerover /template/ ContentPresenter"><Setter Property="Background" Value="#11181B" /></Style>
+    <Style Selector="Button.nav.active"><Setter Property="Background" Value="#142125" /><Setter Property="Foreground" Value="#FFFFFF" /></Style>
+    <Style Selector="Button.info">
+      <Setter Property="Width" Value="22" /><Setter Property="Height" Value="22" /><Setter Property="Padding" Value="0" />
+      <Setter Property="CornerRadius" Value="11" /><Setter Property="Background" Value="#172125" />
+      <Setter Property="Foreground" Value="#8FA2A9" /><Setter Property="FontSize" Value="11" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" /><Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border.card">
+      <Setter Property="Background" Value="#F20D1215" /><Setter Property="BorderBrush" Value="#243136" />
+      <Setter Property="BorderThickness" Value="1" /><Setter Property="CornerRadius" Value="22" />
+      <Setter Property="Padding" Value="22" /><Setter Property="BoxShadow" Value="0 18 48 0 #36000000" />
+    </Style>
+    <Style Selector="Border.setting"><Setter Property="Background" Value="#0A0F11" /><Setter Property="CornerRadius" Value="15" /><Setter Property="Padding" Value="16" /></Style>
+    <Style Selector="Border.badge"><Setter Property="Background" Value="#142125" /><Setter Property="CornerRadius" Value="999" /><Setter Property="Padding" Value="10,5" /></Style>
+    <Style Selector="TextBlock.muted"><Setter Property="Foreground" Value="#849197" /><Setter Property="TextWrapping" Value="Wrap" /></Style>
+    <Style Selector="TextBlock.eyebrow">
+      <Setter Property="Foreground" Value="#62FFF7" /><Setter Property="FontSize" Value="10" />
+      <Setter Property="FontWeight" Value="Bold" /><Setter Property="LetterSpacing" Value="2.2" />
+    </Style>
+    <Style Selector="TextBlock.h1"><Setter Property="FontSize" Value="31" /><Setter Property="FontWeight" Value="Bold" /><Setter Property="LetterSpacing" Value="-0.5" /></Style>
+    <Style Selector="TextBox, ComboBox">
+      <Setter Property="Background" Value="#080C0E" /><Setter Property="BorderBrush" Value="#2A373C" />
+      <Setter Property="BorderThickness" Value="1" /><Setter Property="CornerRadius" Value="11" /><Setter Property="MinHeight" Value="42" />
+    </Style>
+    <Style Selector="TextBox:focus"><Setter Property="BorderBrush" Value="#62FFF7" /></Style>
+    <Style Selector="ToggleSwitch"><Setter Property="OnContent" Value="Вкл" /><Setter Property="OffContent" Value="Выкл" /></Style>
+    <Style Selector="ToolTip"><Setter Property="Background" Value="#141B1E" /><Setter Property="Foreground" Value="#EAF0F2" /><Setter Property="CornerRadius" Value="10" /><Setter Property="MaxWidth" Value="340" /></Style>
+    <Style Selector="ToolTip TextBlock"><Setter Property="TextWrapping" Value="Wrap" /><Setter Property="MaxWidth" Value="310" /></Style>
+  </Application.Styles>
+</Application>

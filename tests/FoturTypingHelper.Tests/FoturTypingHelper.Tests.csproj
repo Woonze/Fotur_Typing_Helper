@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\FoturTypingHelper.Core\FoturTypingHelper.Core.csproj" />
+    <ProjectReference Include="..\..\src\FoturTypingHelper.App\FoturTypingHelper.App.csproj" />
     <ProjectReference Include="..\..\src\FoturTypingHelper.Windows\FoturTypingHelper.Windows.csproj" />
   </ItemGroup>
 

@@ -65,7 +65,16 @@ public sealed class MacKeyboardService : IKeyboardService
         var key = (ushort)MacNative.CGEventGetIntegerValueField(e, MacNative.KeyboardEventKeycode);
         var flags = MacNative.CGEventGetFlags(e);
         var isHotkey = MatchesHotkey(key, flags, _dictationHotkey);
-        if (type == MacNative.KeyDown && isHotkey && !_dictationDown) { _dictationDown = true; DictationHotkeyChanged?.Invoke(this, true); return 0; }
+        if (type == MacNative.KeyDown && isHotkey)
+        {
+            if (!_dictationDown)
+            {
+                _dictationDown = true;
+                DictationHotkeyChanged?.Invoke(this, true);
+            }
+            // Suppress both the initial press and every macOS key-repeat event.
+            return 0;
+        }
         if (_dictationDown && ((type == MacNative.KeyUp && KeyName(key) == _dictationHotkey.Key) ||
             (type == MacNative.FlagsChanged && !HasRequiredModifiers(flags, _dictationHotkey.Modifiers))))
         { _dictationDown = false; DictationHotkeyChanged?.Invoke(this, false); return 0; }

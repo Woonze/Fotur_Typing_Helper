@@ -55,7 +55,7 @@ public partial class MainWindow : Window
         UpdateHotkeyLabels();
         ConfidenceValueText.Text = $"{s.CorrectionConfidence:P0}";
         ModelStatusText.Text = $"Whisper {s.SpeechModel} · " + (_runtime.IsModelInstalled ? "готова" : "загрузится при первом запуске");
-        var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.0";
+        var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.1.0";
         var platform = OperatingSystem.IsMacOS()
             ? (System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "macOS Apple Silicon" : "macOS Intel")
             : "Windows x64";

@@ -5,7 +5,7 @@
   <Border Background="#090D0F" BorderBrush="#1C262A" BorderThickness="0,0,1,0" Padding="22,24">
    <Grid RowDefinitions="Auto,Auto,*,Auto">
     <StackPanel Orientation="Horizontal" Spacing="12">
-     <Border Width="42" Height="42" CornerRadius="13" Background="#62FFF7" BoxShadow="0 6 24 0 #3262FFF7"><TextBlock Text="FT" Foreground="#041214" FontWeight="Black" FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+     <Image Width="42" Height="42" Source="avares://FoturTypingHelper.App/Assets/FoturTypingHelper.png"/>
      <StackPanel VerticalAlignment="Center"><TextBlock Text="FOTUR" FontWeight="Black" FontSize="17" LetterSpacing="2.4"/><TextBlock Text="typing helper" Classes="muted" FontSize="11"/></StackPanel>
     </StackPanel>
     <Border Grid.Row="1" Margin="0,28,0,22" Classes="card" Padding="15">
@@ -78,7 +78,7 @@
     </StackPanel>
 
     <StackPanel x:Name="AboutPanel" IsVisible="False" Spacing="20">
-     <TextBlock Text="FOTUR / PRODUCT" Classes="eyebrow"/><TextBlock Text="Fotur Typing Helper" Classes="h1"/><TextBlock x:Name="AboutVersionText" Text="Версия 1.0.0 · 23 июля 2026 · MIT" Classes="muted"/>
+     <TextBlock Text="FOTUR / PRODUCT" Classes="eyebrow"/><TextBlock Text="Fotur Typing Helper" Classes="h1"/><TextBlock x:Name="AboutVersionText" Text="Версия 1.1.0 · 23 июля 2026 · MIT" Classes="muted"/>
      <Grid ColumnDefinitions="1.2*,*" ColumnSpacing="16"><Border Classes="card"><StackPanel Spacing="14"><TextBlock Text="Незаметный слой между вами и клавиатурой" FontSize="20" FontWeight="Bold" TextWrapping="Wrap"/><TextBlock TextWrapping="Wrap" Text="Fotur исправляет текст, набранный в неверной раскладке, и превращает речь в текст в любом активном поле. Обычная диктовка сохраняет русский или английский язык, а отдельный режим может локально переводить речь на английский."/><Border Classes="setting"><StackPanel Spacing="5"><TextBlock Text="Создатель" Classes="eyebrow"/><TextBlock Text="Кирилл · Woonze" FontSize="17" FontWeight="SemiBold"/><TextBlock Text="Open source · Windows x64 · macOS Intel и Apple Silicon" Foreground="#62FFF7" TextWrapping="Wrap"/></StackPanel></Border><TextBlock Text="Репозиторий и обновления" Classes="eyebrow"/><TextBlock Text="github.com/Woonze/Fotur_Typing_Helper" FontFamily="Cascadia Mono, Consolas" FontSize="12" Foreground="#A9BBB9"/><TextBlock Text="Новые стабильные версии проверяются при каждом запуске через GitHub Releases." Classes="muted" FontSize="11"/></StackPanel></Border><Border Grid.Column="1" Classes="card"><StackPanel Spacing="12"><TextBlock Text="Приватность и диагностика" FontSize="17" FontWeight="Bold" TextWrapping="Wrap"/><TextBlock Text="Текст не сохраняется и не отправляется в облако. Временное аудио удаляется после распознавания; интернет нужен только для первой загрузки выбранной модели Whisper." Classes="muted" TextWrapping="Wrap"/><Border Classes="setting"><StackPanel Spacing="5"><TextBlock Text="Журнал ошибок" FontWeight="SemiBold"/><TextBlock Text="%LOCALAPPDATA%/Fotur/TypingHelper/logs" FontFamily="Cascadia Mono, Consolas" FontSize="11" Foreground="#A9BBB9"/></StackPanel></Border><TextBlock Text="Лицензия MIT разрешает использование, изучение и доработку проекта с сохранением уведомления об авторских правах." Classes="muted" FontSize="11" TextWrapping="Wrap"/></StackPanel></Border></Grid>
     </StackPanel>
    </Grid></ScrollViewer>

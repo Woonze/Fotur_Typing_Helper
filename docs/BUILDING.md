@@ -1,4 +1,4 @@
-# Сборка и проверка 1.0.0
+# Сборка и проверка 1.1.0
 
 ## Windows x64
 
@@ -12,8 +12,16 @@ dotnet test FoturTypingHelper.sln -c Release
 
 Результаты:
 
-- `artifacts/installer/FoturTypingHelper-Setup-1.0.0-win-x64.exe`
-- `artifacts/FoturTypingHelper-1.0.0-win-x64-portable.zip`
+- `artifacts/installer/FoturTypingHelper-Setup-1.1.0-win-x64.exe`
+- `artifacts/FoturTypingHelper-1.1.0-win-x64-portable.zip`
+
+После публикации стабильного релиза endpoint автообновления и полный набор платформенных файлов проверяются командой:
+
+```powershell
+.\scripts\verify-release-feed.ps1 -ExpectedVersion 1.1.0
+```
+
+До публикации 1.1.0 скрипт ожидаемо показывает предыдущий стабильный релиз; prerelease и draft встроенный updater не видит.
 - `artifacts/SHA256SUMS.txt`
 
 Реальный браузерный стенд:

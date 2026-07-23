@@ -1,0 +1,141 @@
+name: 🐛 Сообщить об ошибке
+description: Сообщите о проблеме в работе Fotur Typing Helper
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Спасибо, что помогаете улучшать Fotur Typing Helper!
+
+        Перед созданием Issue проверьте, что похожая проблема ещё не была опубликована.
+
+  - type: input
+    id: app-version
+    attributes:
+      label: Версия Fotur Typing Helper
+      description: Версию можно посмотреть в настройках приложения или в названии скачанного файла.
+      placeholder: Например, 1.1.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: operating-system
+    attributes:
+      label: Операционная система
+      options:
+        - Windows 10
+        - Windows 11
+        - macOS Apple Silicon
+        - macOS Intel
+        - Другая
+    validations:
+      required: true
+
+  - type: input
+    id: os-version
+    attributes:
+      label: Версия операционной системы
+      placeholder: Например, Windows 11 24H2 или macOS 15.5
+
+  - type: dropdown
+    id: installation-type
+    attributes:
+      label: Способ установки
+      options:
+        - Windows Installer
+        - Windows Portable
+        - macOS DMG
+        - Сборка из исходного кода
+        - Другое
+    validations:
+      required: true
+
+  - type: dropdown
+    id: affected-feature
+    attributes:
+      label: Какая функция не работает?
+      options:
+        - Исправление раскладки EN ↔ RU
+        - Голосовой ввод
+        - Перевод речи на английский
+        - Горячие клавиши
+        - Микрофон
+        - Загрузка модели Whisper
+        - Автоматическое обновление
+        - Системный трей
+        - Запуск приложения
+        - Другое
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem-description
+    attributes:
+      label: Описание проблемы
+      description: Подробно расскажите, что произошло.
+      placeholder: После нажатия горячей клавиши...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: Как воспроизвести ошибку?
+      description: Перечислите последовательность действий.
+      placeholder: |
+        1. Запустить приложение
+        2. Открыть настройки
+        3. Выбрать...
+        4. Нажать...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behaviour
+    attributes:
+      label: Ожидаемое поведение
+      placeholder: Что должно было произойти?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behaviour
+    attributes:
+      label: Фактическое поведение
+      placeholder: Что произошло на самом деле?
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Логи или текст ошибки
+      description: |
+        Вставьте сюда текст ошибки или логи. Не публикуйте пароли, токены и другую конфиденциальную информацию.
+      render: shell
+
+  - type: textarea
+    id: attachments
+    attributes:
+      label: Скриншоты или видео
+      description: Перетащите сюда изображения или видеозапись проблемы.
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Дополнительная информация
+      description: Модель микрофона, выбранная модель Whisper, используемые горячие клавиши и другие важные сведения.
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Подтверждение
+      options:
+        - label: Я проверил, что похожая Issue ещё не создана.
+          required: true
+        - label: Я использую актуальную версию Fotur Typing Helper.
+          required: true
+        - label: Я удалил из логов личные и конфиденциальные данные.
+          required: true

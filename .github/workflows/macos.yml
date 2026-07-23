@@ -1,0 +1,40 @@
+name: macOS build
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            rid: osx-arm64
+            artifact: FoturTypingHelper-macos-arm64
+          - runner: macos-15-intel
+            rid: osx-x64
+            artifact: FoturTypingHelper-macos-x64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.0.x
+      - name: Build, test and package DMG
+        run: ./scripts/build-macos.sh "${{ matrix.rid }}"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact }}
+          path: |
+            artifacts/*.dmg
+            artifacts/*.zip
+            artifacts/SHA256SUMS-macos-*.txt
+          if-no-files-found: error

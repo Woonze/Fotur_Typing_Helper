@@ -5,9 +5,7 @@ using FoturTypingHelper.Core;
 
 namespace FoturTypingHelper.Windows;
 
-public sealed record CorrectionApplied(string Original, string Replacement, double Confidence);
-
-public sealed class KeyboardHookService : IDisposable
+public sealed class KeyboardHookService : IKeyboardService
 {
     private readonly AppSettings _settings;
     private readonly ActiveWindowService _activeWindow;
@@ -26,6 +24,7 @@ public sealed class KeyboardHookService : IDisposable
 
     public event EventHandler<CorrectionApplied>? Corrected;
     public event EventHandler<bool>? DictationHotkeyChanged;
+    public event EventHandler<string>? StatusChanged;
 
     public KeyboardHookService(AppSettings settings, ActiveWindowService activeWindow, TextInjectionService injection)
     {
@@ -42,6 +41,7 @@ public sealed class KeyboardHookService : IDisposable
         if (!OperatingSystem.IsWindows() || _hook != IntPtr.Zero) return;
         _hook = NativeMethods.SetWindowsHookEx(NativeMethods.WhKeyboardLl, _callback, IntPtr.Zero, 0);
         if (_hook == IntPtr.Zero) throw new Win32Exception(Marshal.GetLastWin32Error(), "Не удалось включить клавиатурный hook");
+        StatusChanged?.Invoke(this, "Глобальные горячие клавиши активны");
     }
 
     public void RefreshSettings()

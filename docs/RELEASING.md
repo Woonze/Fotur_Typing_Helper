@@ -1,36 +1,45 @@
-# Публикация GitHub Release
+# Публикация Fotur Typing Helper 1.0.0
 
 ## Подготовка
 
-1. Обновить одинаковую версию в `Directory.Build.props` и `installer/FoturTypingHelper.iss`.
-2. Запустить `./scripts/build-release.ps1` из PowerShell.
-3. Проверить тесты, portable-приложение и установщик на чистой Windows 10/11.
-4. Убедиться, что self-contained папка содержит `runtimes/win-x64/whisper.dll`; скрипт сборки проверяет это автоматически.
-5. Запустить BrowserSmoke и DictationSmoke из `BUILDING.md`.
-6. Подготовить заметки: что добавлено, исправлено, известные ограничения и способ отката.
+1. Убедиться, что версия одинакова в `Directory.Build.props` и `installer/FoturTypingHelper.iss`.
+2. Дождаться зелёных `Windows build` и обеих matrix-задач `macOS build` для нужного коммита.
+3. Скачать артефакты Actions и собрать в одной папке Windows Setup/portable, два macOS ZIP, два DMG и три SHA-файла.
+4. Вручную проверить Windows installer/portable и хотя бы один физический Mac. Для Intel и Apple Silicon минимум проверить запуск, три разрешения, автокоррекцию, диктовку, tray и обновление.
+5. Перечитать `RELEASE_NOTES.md`. Не объявлять notarization или подпись, пока сертификаты реально не подключены.
 
-## Публикация на сайте GitHub
+## Через сайт GitHub
 
-1. Открыть страницу репозитория → **Releases** → **Draft a new release**.
-2. Создать тег вида `v0.3.0` от проверенного коммита основной ветки.
-3. Заголовок сделать понятным человеку, например `Fotur Typing Helper 0.3.0`.
-4. Для ранней публичной версии включить **Set as a pre-release**.
-5. Приложить Setup `.exe`, ZIP portable-сборки и файл SHA-256.
-6. Перечитать заметки и нажать **Publish release**.
+1. Открыть репозиторий → **Releases** → **Draft a new release**.
+2. Нажать **Choose a tag**, ввести `v1.0.0`, выбрать **Create new tag on publish** и ветку `main`.
+3. Title: `Fotur Typing Helper 1.0.0`.
+4. Вставить содержимое `RELEASE_NOTES.md`.
+5. Приложить:
+   - `FoturTypingHelper-Setup-1.0.0-win-x64.exe`
+   - `FoturTypingHelper-1.0.0-win-x64-portable.zip`
+   - `FoturTypingHelper-1.0.0-macos-arm64.dmg` и `.zip`
+   - `FoturTypingHelper-1.0.0-macos-x64.dmg` и `.zip`
+   - `SHA256SUMS.txt`, `SHA256SUMS-macos-arm64.txt`, `SHA256SUMS-macos-x64.txt`
+6. Для финальной 1.0.0 не ставить **pre-release**. Нажать **Publish release**.
 
-## GitHub CLI
+Имена ZIP и checksum-файлов важны: встроенный updater ищет их по этим суффиксам.
 
-После установки `gh` и команды `gh auth login` выпуск можно создать так:
+## Через GitHub CLI
 
 ```powershell
-gh release create v0.3.0 `
-  artifacts/installer/FoturTypingHelper-Setup-0.3.0-win-x64.exe `
-  artifacts/FoturTypingHelper-0.3.0-win-x64-portable.zip `
+gh release create v1.0.0 `
+  artifacts/installer/FoturTypingHelper-Setup-1.0.0-win-x64.exe `
+  artifacts/FoturTypingHelper-1.0.0-win-x64-portable.zip `
+  artifacts/FoturTypingHelper-1.0.0-macos-arm64.dmg `
+  artifacts/FoturTypingHelper-1.0.0-macos-arm64.zip `
+  artifacts/FoturTypingHelper-1.0.0-macos-x64.dmg `
+  artifacts/FoturTypingHelper-1.0.0-macos-x64.zip `
   artifacts/SHA256SUMS.txt `
+  artifacts/SHA256SUMS-macos-arm64.txt `
+  artifacts/SHA256SUMS-macos-x64.txt `
   --repo Woonze/Fotur_Typing_Helper `
-  --title "Fotur Typing Helper 0.3.0" `
-  --notes-file RELEASE_NOTES.md `
-  --prerelease
+  --title "Fotur Typing Helper 1.0.0" `
+  --notes-file RELEASE_NOTES.md
 ```
 
-Неподписанный установщик может вызвать Microsoft Defender SmartScreen. Убирать предупреждение обходными способами нельзя: для публичного стабильного выпуска нужен доверенный code-signing сертификат.
+Автообновление проверяет только опубликованный стабильный `/releases/latest`; draft и prerelease пользователям не предлагаются.

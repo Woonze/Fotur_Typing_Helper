@@ -34,6 +34,43 @@ public sealed class LayoutCorrectionTests
         Assert.False(decision.ShouldCorrect);
     }
 
+    [Theory]
+    [InlineData("рщц фку нщг", "how are you")]
+    [InlineData("еру ьщвуд кусщптшяуы тфегкфд ызууср", "the model recognizes natural speech")]
+    public void Scorer_UsesEveryWordInEnglishPhrase(string source, string expected)
+    {
+        var decision = new LanguageScorer().Evaluate(source, 0.60);
+        Assert.True(decision.ShouldCorrect);
+        Assert.Equal(expected, decision.Replacement);
+        Assert.Equal(TextLanguage.English, decision.Language);
+    }
+
+    [Theory]
+    [InlineData("Fotur")]
+    [InlineData("interface")]
+    [InlineData("ready")]
+    public void Scorer_KeepsKnownEnglishAndBrandWords(string source)
+    {
+        Assert.False(new LanguageScorer().Evaluate(source).ShouldCorrect);
+    }
+
+    [Fact]
+    public void Scorer_RepairsMixedPhraseAfterDelayedLayoutSwitch()
+    {
+        var decision = new LanguageScorer().Evaluate("Fotur рудзы зущзду ензу", 0.60);
+        Assert.True(decision.ShouldCorrect);
+        Assert.Equal("Fotur helps people type", decision.Replacement);
+        Assert.Equal(TextLanguage.English, decision.Language);
+    }
+
+    [Fact]
+    public void Scorer_RepairsMixedEnglishPhraseAfterCommonArticle()
+    {
+        var decision = new LanguageScorer().Evaluate("the аштфд лунищфкв", 0.60);
+        Assert.True(decision.ShouldCorrect);
+        Assert.Equal("the final keyboard", decision.Replacement);
+    }
+
     [Fact]
     public void VoiceCommands_FormatsPunctuation()
     {
@@ -57,6 +94,8 @@ public sealed class LayoutCorrectionTests
     {
         Assert.True(HotkeyGesture.TryParse("shift + ctrl + d", out var gesture, out _));
         Assert.Equal("Ctrl+Shift+D", gesture.ToString());
+        Assert.True(HotkeyGesture.TryParse("command + space", out var macGesture, out _));
+        Assert.Equal("Cmd+Space", macGesture.ToString());
         Assert.Equal("Сочетания диктовки и отмены совпадают", HotkeyGesture.ValidatePair("Ctrl+Shift+D", "Ctrl+Shift+D"));
         Assert.Equal("Это сочетание зарезервировано Windows", HotkeyGesture.ValidatePair("Alt+F4", "Ctrl+Alt+Backspace"));
     }

@@ -4,7 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationManifest Condition="$([MSBuild]::IsOSPlatform('Windows'))">app.manifest</ApplicationManifest>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,5 +18,6 @@
   <ItemGroup>
     <ProjectReference Include="..\FoturTypingHelper.Core\FoturTypingHelper.Core.csproj" />
     <ProjectReference Include="..\FoturTypingHelper.Windows\FoturTypingHelper.Windows.csproj" />
+    <ProjectReference Include="..\FoturTypingHelper.Mac\FoturTypingHelper.Mac.csproj" />
   </ItemGroup>
 </Project>

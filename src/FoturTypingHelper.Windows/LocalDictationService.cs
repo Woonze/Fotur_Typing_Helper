@@ -5,7 +5,7 @@ using Whisper.net.LibraryLoader;
 
 namespace FoturTypingHelper.Windows;
 
-public sealed class LocalDictationService
+public sealed class LocalDictationService : IDictationService
 {
     private readonly string _modelsRoot;
     public event EventHandler<double>? DownloadProgress;
@@ -26,6 +26,7 @@ public sealed class LocalDictationService
 
     public async Task<string> TranscribeAsync(string audioPath, AppSettings settings, CancellationToken cancellationToken = default)
     {
+        WavAudioProcessor.ProcessInPlace(audioPath, settings);
         var modelPath = await EnsureModelAsync(settings.SpeechModel, cancellationToken);
         using var factory = WhisperFactory.FromPath(modelPath);
         var builder = factory.CreateBuilder();
@@ -35,13 +36,16 @@ public sealed class LocalDictationService
             builder.WithLanguage(settings.SpeechLanguage);
         if (settings.DictationTaskMode == DictationTaskMode.TranslateToEnglish)
             builder.WithTranslate();
+        if (settings.DictionaryPromptEnabled && settings.CustomDictionary.Count > 0)
+            builder.WithPrompt(string.Join(", ", settings.CustomDictionary.Take(80)));
         using var processor = builder.Build();
         await using var audio = File.OpenRead(audioPath);
         var result = new List<string>();
         await foreach (var segment in processor.ProcessAsync(audio, cancellationToken))
             result.Add(segment.Text.Trim());
         try { File.Delete(audioPath); } catch { }
-        return VoiceCommandProcessor.Process(string.Join(" ", result), settings.VoiceCommandsEnabled);
+        var formatted = VoiceCommandProcessor.Process(string.Join(" ", result), settings.VoiceCommandsEnabled);
+        return DictationTextPostProcessor.Process(formatted, settings);
     }
 
     public bool IsModelInstalled(string model) => File.Exists(GetModelPath(model));

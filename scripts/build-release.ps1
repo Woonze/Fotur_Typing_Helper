@@ -23,6 +23,17 @@ New-Item -ItemType Directory -Path $resolvedPublish | Out-Null
 & $dotnetPath publish (Join-Path $workspaceRoot 'src\FoturTypingHelper.App\FoturTypingHelper.App.csproj') `
     -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -o $publishDir
 
+# The shared app references both platform adapters at compile time. Remove macOS native payloads
+# from the Windows package; managed Mac types remain lazy and are never activated on Windows.
+$macRuntime = Join-Path $publishDir 'runtimes\coreml'
+if (Test-Path -LiteralPath $macRuntime) {
+    $resolvedMacRuntime = [IO.Path]::GetFullPath($macRuntime)
+    if (-not $resolvedMacRuntime.StartsWith($resolvedPublish, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Unsafe macOS runtime cleanup path: $resolvedMacRuntime"
+    }
+    Remove-Item -LiteralPath $resolvedMacRuntime -Recurse -Force
+}
+
 $whisperRuntime = Join-Path $publishDir 'runtimes\win-x64\whisper.dll'
 if (-not (Test-Path -LiteralPath $whisperRuntime)) {
     throw "Windows Whisper runtime is missing from publish output: $whisperRuntime"

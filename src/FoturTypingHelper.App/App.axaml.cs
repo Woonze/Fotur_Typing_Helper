@@ -3,7 +3,6 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using FoturTypingHelper.Core;
-using FoturTypingHelper.Windows;
 
 namespace FoturTypingHelper.App;
 
@@ -25,15 +24,29 @@ public partial class App : Application
             desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
             var settingsRoot = Environment.GetEnvironmentVariable("FOTUR_SETTINGS_ROOT");
             var store = new SettingsStore(string.IsNullOrWhiteSpace(settingsRoot) ? null : settingsRoot);
-            var injection = new TextInjectionService();
-            var activeWindow = new ActiveWindowService();
-            var keyboard = new KeyboardHookService(store.State.Settings, activeWindow, injection);
-            _runtime = new AppRuntime(store, keyboard, new AudioRecorder(), new LocalDictationService(), injection, activeWindow);
-            _window = new MainWindow(store, new AutostartService(), _runtime);
+            var services = PlatformServiceFactory.Create(store.State.Settings);
+            _runtime = new AppRuntime(store, services.Keyboard, services.Audio, services.Dictation, services.Injection, services.ActiveWindow);
+            _window = new MainWindow(store, services.Autostart, _runtime);
             desktop.MainWindow = _window;
             CreateTray(desktop, store);
             desktop.Exit += (_, _) => { _runtime.Dispose(); _tray?.Dispose(); store.Save(); };
             _runtime.Start();
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var update = await new GitHubUpdateService().CheckAndInstallAsync(store.State.Settings);
+                    if (update is not null) _runtime.ReportStatus(update.Message);
+                    if (update?.Restarting == true)
+                        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                        {
+                            ExitRequested = true;
+                            _window?.Close();
+                            desktop.Shutdown();
+                        });
+                }
+                catch (Exception ex) { DiagnosticLog.Write("AutoUpdate", ex); _runtime.ReportStatus("Не удалось проверить обновления"); }
+            });
             var readyFile = Environment.GetEnvironmentVariable("FOTUR_READY_FILE");
             if (!string.IsNullOrWhiteSpace(readyFile))
                 File.WriteAllText(readyFile, "ready");

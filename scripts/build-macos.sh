@@ -119,24 +119,24 @@ fi
 
 osascript <<APPLESCRIPT
 tell application "Finder"
-  tell disk "$volume_name"
-    open
-    set current view of container window to icon view
-    set toolbar visible of container window to false
-    set statusbar visible of container window to false
-    set pathbar visible of container window to false
-    set bounds of container window to {120, 120, 780, 540}
-    set theViewOptions to the icon view options of container window
-    set arrangement of theViewOptions to not arranged
-    set icon size of theViewOptions to 104
-    set text size of theViewOptions to 13
-    set background picture of theViewOptions to file ".background:dmg-background.png"
-    set position of item "Fotur Typing Helper.app" of container window to {170, 245}
-    set position of item "Applications" of container window to {490, 245}
-    update without registering applications
-    delay 3
-    close
-  end tell
+  set dmgFolder to POSIX file "$mount_point" as alias
+  open dmgFolder
+  delay 2
+  set current view of container window of dmgFolder to icon view
+  set toolbar visible of container window of dmgFolder to false
+  set statusbar visible of container window of dmgFolder to false
+  set pathbar visible of container window of dmgFolder to false
+  set bounds of container window of dmgFolder to {120, 120, 780, 540}
+  set theViewOptions to the icon view options of container window of dmgFolder
+  set arrangement of theViewOptions to not arranged
+  set icon size of theViewOptions to 104
+  set text size of theViewOptions to 13
+  set background picture of theViewOptions to file ".background:dmg-background.png" of dmgFolder
+  set position of item "Fotur Typing Helper.app" of dmgFolder to {170, 245}
+  set position of item "Applications" of dmgFolder to {490, 245}
+  update dmgFolder without registering applications
+  delay 3
+  close container window of dmgFolder
 end tell
 APPLESCRIPT
 

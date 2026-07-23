@@ -20,6 +20,7 @@ public sealed class MacKeyboardService : IKeyboardService
 
     public event EventHandler<CorrectionApplied>? Corrected;
     public event EventHandler<bool>? DictationHotkeyChanged;
+    public event EventHandler<string>? StatusChanged;
 
     public MacKeyboardService(AppSettings settings, MacTextInjectionService injection)
     { _settings = settings; _injection = injection; _scorer = new(settings.CustomDictionary); _callback = OnEvent; RefreshHotkeys(); }
@@ -27,10 +28,22 @@ public sealed class MacKeyboardService : IKeyboardService
     public void Start()
     {
         if (!OperatingSystem.IsMacOS() || _tap != 0) return;
-        if (!MacNative.CGPreflightListenEventAccess()) MacNative.CGRequestListenEventAccess();
-        if (!MacNative.CGPreflightPostEventAccess()) MacNative.CGRequestPostEventAccess();
+        if (!MacNative.CGPreflightListenEventAccess())
+        {
+            MacNative.CGRequestListenEventAccess();
+            StatusChanged?.Invoke(this, "Разрешите Fotur отслеживать клавиатуру: Настройки системы → Конфиденциальность и безопасность → Мониторинг ввода, затем перезапустите приложение.");
+        }
+        if (!_injection.CanPostEvents)
+        {
+            MacNative.CGRequestPostEventAccess();
+            StatusChanged?.Invoke(this, PostAccessMessage);
+        }
         _tap = MacNative.CGEventTapCreate(0, 0, 0, (1UL << MacNative.KeyDown) | (1UL << MacNative.KeyUp) | (1UL << MacNative.FlagsChanged), _callback, 0);
-        if (_tap == 0) throw new InvalidOperationException("Разрешите Fotur управлять компьютером: System Settings → Privacy & Security → Accessibility и Input Monitoring.");
+        if (_tap == 0)
+        {
+            StatusChanged?.Invoke(this, "Глобальные хоткеи недоступны: включите для Fotur «Мониторинг ввода» в настройках конфиденциальности macOS и перезапустите приложение. Тестовая кнопка продолжит работать.");
+            return;
+        }
         _source = MacNative.CFMachPortCreateRunLoopSource(0, _tap, 0);
         var commonModes = MacNative.CFStringCreateWithCString(0, "kCFRunLoopCommonModes", 0x08000100);
         MacNative.CFRunLoopAddSource(MacNative.CFRunLoopGetMain(), _source, commonModes);
@@ -42,6 +55,12 @@ public sealed class MacKeyboardService : IKeyboardService
 
     private nint OnEvent(nint proxy, int type, nint e, nint userInfo)
     {
+        if (type is MacNative.TapDisabledByTimeout or MacNative.TapDisabledByUserInput)
+        {
+            MacNative.CGEventTapEnable(_tap, true);
+            StatusChanged?.Invoke(this, "Глобальный перехват клавиш macOS восстановлен");
+            return e;
+        }
         if ((ulong)MacNative.CGEventGetIntegerValueField(e, MacNative.EventSourceUserData) == MacNative.Marker) return e;
         var key = (ushort)MacNative.CGEventGetIntegerValueField(e, MacNative.KeyboardEventKeycode);
         var flags = MacNative.CGEventGetFlags(e);
@@ -68,7 +87,12 @@ public sealed class MacKeyboardService : IKeyboardService
         var phrase = _recent.Count == 0 ? current : string.Join(' ', _recent.Append(current));
         var decision = _scorer.Evaluate(phrase, Math.Max(0.56, _settings.CorrectionConfidence - (_recent.Count > 0 ? 0.12 : 0)));
         if (!decision.ShouldCorrect) { _recent.Add(current); if (_recent.Count > 23) _recent.RemoveAt(0); return; }
-        _injection.ReplacePrevious(decision.Original, decision.Replacement, decision.Language);
+        if (!_injection.ReplacePrevious(decision.Original, decision.Replacement, decision.Language))
+        {
+            StatusChanged?.Invoke(this, PostAccessMessage);
+            _recent.Clear();
+            return;
+        }
         _lastCorrection = new(decision.Original, decision.Replacement, decision.Confidence);
         _lastCorrectionUtc = DateTime.UtcNow;
         _recent.Clear(); Corrected?.Invoke(this, _lastCorrection);
@@ -77,7 +101,11 @@ public sealed class MacKeyboardService : IKeyboardService
     private bool TryUndo()
     {
         if (_lastCorrection is null || DateTime.UtcNow - _lastCorrectionUtc > TimeSpan.FromSeconds(8)) return false;
-        _injection.ReplacePrevious(_lastCorrection.Replacement, _lastCorrection.Original, TextLanguage.Unknown);
+        if (!_injection.ReplacePrevious(_lastCorrection.Replacement, _lastCorrection.Original, TextLanguage.Unknown))
+        {
+            StatusChanged?.Invoke(this, PostAccessMessage);
+            return false;
+        }
         _lastCorrection = null;
         return true;
     }
@@ -90,7 +118,7 @@ public sealed class MacKeyboardService : IKeyboardService
 
     private static bool MatchesHotkey(ushort key, ulong flags, HotkeyGesture gesture) =>
         string.Equals(KeyName(key), gesture.Key, StringComparison.OrdinalIgnoreCase) &&
-        Modifiers(flags) == gesture.Modifiers;
+        (Modifiers(flags) & gesture.Modifiers) == gesture.Modifiers;
 
     private static bool HasRequiredModifiers(ulong flags, HotkeyModifiers required) =>
         (Modifiers(flags) & required) == required;
@@ -101,17 +129,23 @@ public sealed class MacKeyboardService : IKeyboardService
         if ((flags & MacNative.Control) != 0) result |= HotkeyModifiers.Ctrl;
         if ((flags & MacNative.Alternate) != 0) result |= HotkeyModifiers.Alt;
         if ((flags & MacNative.Shift) != 0) result |= HotkeyModifiers.Shift;
+        if ((flags & MacNative.Command) != 0) result |= HotkeyModifiers.Meta;
         return result;
     }
 
     private static string KeyName(ushort key) => key switch
     {
         49 => "Space", 51 => "Backspace", 36 => "Enter", 48 => "Tab", 53 => "Escape",
+        18 => "1", 19 => "2", 20 => "3", 21 => "4", 23 => "5", 22 => "6", 26 => "7", 28 => "8", 25 => "9", 29 => "0",
+        122 => "F1", 120 => "F2", 99 => "F3", 118 => "F4", 96 => "F5", 97 => "F6",
+        98 => "F7", 100 => "F8", 101 => "F9", 109 => "F10", 103 => "F11", 111 => "F12",
         0 => "A", 11 => "B", 8 => "C", 2 => "D", 14 => "E", 3 => "F", 5 => "G", 4 => "H",
         34 => "I", 38 => "J", 40 => "K", 37 => "L", 46 => "M", 45 => "N", 31 => "O", 35 => "P",
         12 => "Q", 15 => "R", 1 => "S", 17 => "T", 32 => "U", 9 => "V", 13 => "W", 7 => "X",
         16 => "Y", 6 => "Z", _ => $"VK{key:X2}"
     };
+
+    private const string PostAccessMessage = "macOS не разрешает заменять и вставлять текст. Включите Fotur Typing Helper: Настройки системы → Конфиденциальность и безопасность → Универсальный доступ, затем полностью перезапустите приложение.";
 
     public void Dispose()
     {

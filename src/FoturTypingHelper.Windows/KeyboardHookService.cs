@@ -24,6 +24,7 @@ public sealed class KeyboardHookService : IKeyboardService
 
     public event EventHandler<CorrectionApplied>? Corrected;
     public event EventHandler<bool>? DictationHotkeyChanged;
+    public event EventHandler<string>? StatusChanged;
 
     public KeyboardHookService(AppSettings settings, ActiveWindowService activeWindow, TextInjectionService injection)
     {
@@ -40,6 +41,7 @@ public sealed class KeyboardHookService : IKeyboardService
         if (!OperatingSystem.IsWindows() || _hook != IntPtr.Zero) return;
         _hook = NativeMethods.SetWindowsHookEx(NativeMethods.WhKeyboardLl, _callback, IntPtr.Zero, 0);
         if (_hook == IntPtr.Zero) throw new Win32Exception(Marshal.GetLastWin32Error(), "Не удалось включить клавиатурный hook");
+        StatusChanged?.Invoke(this, "Глобальные горячие клавиши активны");
     }
 
     public void RefreshSettings()

@@ -10,6 +10,7 @@ internal static class MacNative
     internal const string OpenAL = "/System/Library/Frameworks/OpenAL.framework/OpenAL";
     internal const ulong Marker = 0xF07A2026;
     internal const int KeyDown = 10, KeyUp = 11, FlagsChanged = 12;
+    internal const int TapDisabledByTimeout = -2, TapDisabledByUserInput = -1;
     internal const int KeyboardEventKeycode = 9, EventSourceUserData = 42;
     internal const ulong Shift = 1UL << 17, Control = 1UL << 18, Alternate = 1UL << 19, Command = 1UL << 20;
 

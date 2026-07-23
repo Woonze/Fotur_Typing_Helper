@@ -5,13 +5,28 @@ namespace FoturTypingHelper.Mac;
 public sealed class MacTextInjectionService : ITextInjectionService
 {
     public bool ActivateWindow(nint window) => true;
-    public void SendText(string text) => PostUnicode(text);
-
-    internal void ReplacePrevious(string original, string replacement, TextLanguage language)
+    public bool CanPostEvents => MacNative.CGPreflightPostEventAccess();
+    public bool SendText(string text)
     {
+        if (!EnsurePostAccess()) return false;
+        PostUnicode(text);
+        return true;
+    }
+
+    internal bool ReplacePrevious(string original, string replacement, TextLanguage language)
+    {
+        if (!EnsurePostAccess()) return false;
         for (var i = 0; i < original.Length; i++) PostKey(51);
         PostUnicode(replacement);
         SwitchLayout(language);
+        return true;
+    }
+
+    private static bool EnsurePostAccess()
+    {
+        if (MacNative.CGPreflightPostEventAccess()) return true;
+        MacNative.CGRequestPostEventAccess();
+        return MacNative.CGPreflightPostEventAccess();
     }
 
     private static void PostKey(ushort key)

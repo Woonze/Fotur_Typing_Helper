@@ -27,6 +27,7 @@ public sealed class AppRuntime : IDisposable
         _store = store; _keyboard = keyboard; _recorder = recorder; _dictation = dictation; _injection = injection; _activeWindow = activeWindow;
         _keyboard.Corrected += OnCorrected;
         _keyboard.DictationHotkeyChanged += OnHotkey;
+        _keyboard.StatusChanged += (_, text) => StatusChanged?.Invoke(this, text);
         _dictation.DownloadProgress += (_, progress) => StatusChanged?.Invoke(this, $"Загрузка модели: {progress:P0}");
         _recorder.LevelChanged += (_, level) => MicrophoneLevelChanged?.Invoke(this, level);
     }
@@ -104,7 +105,12 @@ public sealed class AppRuntime : IDisposable
             if (!string.IsNullOrWhiteSpace(text))
             {
                 _injection.ActivateWindow(_dictationTarget);
-                _injection.SendText(text + " ");
+                var inserted = _injection.SendText(text + " ");
+                if (!inserted)
+                {
+                    StatusChanged?.Invoke(this, "Текст распознан, но macOS запретила его вставку. Включите Fotur в Настройки системы → Конфиденциальность и безопасность → Универсальный доступ и перезапустите приложение.");
+                    return;
+                }
                 if (_store.State.Settings.LocalStatisticsEnabled)
                 {
                     _store.State.Statistics.DictatedWords += text.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;

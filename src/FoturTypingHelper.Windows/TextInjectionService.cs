@@ -31,7 +31,7 @@ public sealed class TextInjectionService : ITextInjectionService
         Send(inputs);
     }
 
-    public void SendText(string text)
+    public bool SendText(string text)
     {
         var inputs = new List<NativeMethods.Input>(text.Length * 2);
         foreach (var character in text)
@@ -39,7 +39,7 @@ public sealed class TextInjectionService : ITextInjectionService
             inputs.Add(Key(0, NativeMethods.KeyeventfUnicode, character));
             inputs.Add(Key(0, NativeMethods.KeyeventfUnicode | NativeMethods.KeyeventfKeyup, character));
         }
-        Send(inputs);
+        return Send(inputs);
     }
 
     private static void SwitchLayout(TextLanguage language, IntPtr target)
@@ -59,12 +59,13 @@ public sealed class TextInjectionService : ITextInjectionService
         }
     };
 
-    private static void Send(IReadOnlyCollection<NativeMethods.Input> inputs)
+    private static bool Send(IReadOnlyCollection<NativeMethods.Input> inputs)
     {
-        if (inputs.Count == 0) return;
+        if (inputs.Count == 0) return true;
         var sent = NativeMethods.SendInput((uint)inputs.Count, inputs.ToArray(), Marshal.SizeOf<NativeMethods.Input>());
         if (sent != inputs.Count)
             DiagnosticLog.Write("TextInjection", new InvalidOperationException(
                 $"Windows приняла только {sent} из {inputs.Count} событий ввода."));
+        return sent == inputs.Count;
     }
 }

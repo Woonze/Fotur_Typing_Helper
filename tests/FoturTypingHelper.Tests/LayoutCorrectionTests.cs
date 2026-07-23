@@ -94,6 +94,8 @@ public sealed class LayoutCorrectionTests
     {
         Assert.True(HotkeyGesture.TryParse("shift + ctrl + d", out var gesture, out _));
         Assert.Equal("Ctrl+Shift+D", gesture.ToString());
+        Assert.True(HotkeyGesture.TryParse("command + space", out var macGesture, out _));
+        Assert.Equal("Cmd+Space", macGesture.ToString());
         Assert.Equal("Сочетания диктовки и отмены совпадают", HotkeyGesture.ValidatePair("Ctrl+Shift+D", "Ctrl+Shift+D"));
         Assert.Equal("Это сочетание зарезервировано Windows", HotkeyGesture.ValidatePair("Alt+F4", "Ctrl+Alt+Backspace"));
     }

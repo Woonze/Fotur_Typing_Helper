@@ -148,6 +148,7 @@ public partial class MainWindow : Window
         if (e.KeyModifiers.HasFlag(KeyModifiers.Control)) parts.Add("Ctrl");
         if (e.KeyModifiers.HasFlag(KeyModifiers.Alt)) parts.Add("Alt");
         if (e.KeyModifiers.HasFlag(KeyModifiers.Shift)) parts.Add("Shift");
+        if (e.KeyModifiers.HasFlag(KeyModifiers.Meta)) parts.Add("Cmd");
         parts.Add(KeyName(e.Key));
         var raw = string.Join('+', parts);
         if (HotkeyGesture.TryParse(raw, out var gesture, out var parseError)) box.Text = gesture.ToString();
@@ -179,7 +180,7 @@ public partial class MainWindow : Window
         HotkeyValidationText.Foreground = Brush.Parse("#FF7A8A");
     }
 
-    private static bool IsModifierKey(Key key) => key is Key.LeftCtrl or Key.RightCtrl or Key.LeftAlt or Key.RightAlt or Key.LeftShift or Key.RightShift;
+    private static bool IsModifierKey(Key key) => key is Key.LeftCtrl or Key.RightCtrl or Key.LeftAlt or Key.RightAlt or Key.LeftShift or Key.RightShift or Key.LWin or Key.RWin;
     private static string PrettyHotkey(string value) => value.Replace("+", " + ");
     private static string KeyName(Key key)
     {

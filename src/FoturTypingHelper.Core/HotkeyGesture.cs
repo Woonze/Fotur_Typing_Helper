@@ -1,7 +1,7 @@
 namespace FoturTypingHelper.Core;
 
 [Flags]
-public enum HotkeyModifiers { None = 0, Ctrl = 1, Alt = 2, Shift = 4 }
+public enum HotkeyModifiers { None = 0, Ctrl = 1, Alt = 2, Shift = 4, Meta = 8 }
 
 public sealed record HotkeyGesture(HotkeyModifiers Modifiers, string Key)
 {
@@ -26,6 +26,7 @@ public sealed record HotkeyGesture(HotkeyModifiers Modifiers, string Key)
                 case "ctrl" or "control": modifiers |= HotkeyModifiers.Ctrl; break;
                 case "alt": modifiers |= HotkeyModifiers.Alt; break;
                 case "shift": modifiers |= HotkeyModifiers.Shift; break;
+                case "cmd" or "command" or "meta" or "win" or "windows": modifiers |= HotkeyModifiers.Meta; break;
                 default:
                     if (key is not null) { error = "Допускается только одна основная клавиша"; return false; }
                     key = NormalizeKey(part);
@@ -33,7 +34,7 @@ public sealed record HotkeyGesture(HotkeyModifiers Modifiers, string Key)
             }
         }
         if (key is null) { error = "Добавьте основную клавишу"; return false; }
-        if (modifiers == HotkeyModifiers.None) { error = "Добавьте Ctrl, Alt или Shift"; return false; }
+        if (modifiers == HotkeyModifiers.None) { error = "Добавьте Ctrl, Alt, Shift или Cmd"; return false; }
         if (!IsSupportedKey(key)) { error = $"Клавиша {key} пока не поддерживается"; return false; }
         gesture = new(modifiers, key);
         return true;
@@ -59,6 +60,7 @@ public sealed record HotkeyGesture(HotkeyModifiers Modifiers, string Key)
         if (Modifiers.HasFlag(HotkeyModifiers.Ctrl)) parts.Add("Ctrl");
         if (Modifiers.HasFlag(HotkeyModifiers.Alt)) parts.Add("Alt");
         if (Modifiers.HasFlag(HotkeyModifiers.Shift)) parts.Add("Shift");
+        if (Modifiers.HasFlag(HotkeyModifiers.Meta)) parts.Add("Cmd");
         parts.Add(Key);
         return string.Join('+', parts);
     }

@@ -7,6 +7,7 @@ public interface IKeyboardService : IDisposable
 {
     event EventHandler<CorrectionApplied>? Corrected;
     event EventHandler<bool>? DictationHotkeyChanged;
+    event EventHandler<string>? StatusChanged;
     void Start();
     void RefreshSettings();
 }
@@ -31,7 +32,7 @@ public interface IDictationService
 public interface ITextInjectionService
 {
     bool ActivateWindow(nint window);
-    void SendText(string text);
+    bool SendText(string text);
 }
 
 public interface IActiveWindowService { nint GetActiveWindowHandle(); }

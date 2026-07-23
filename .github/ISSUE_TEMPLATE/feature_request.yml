@@ -1,0 +1,78 @@
+name: ✨ Предложить функцию
+description: Предложите улучшение или новую возможность
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Спасибо за идею!
+
+        Опишите не только предлагаемую функцию, но и проблему, которую она должна решить.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Какую проблему должна решить функция?
+      placeholder: Сейчас пользователю приходится...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Предлагаемое решение
+      placeholder: Я предлагаю добавить...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: feature-area
+    attributes:
+      label: К какой части приложения относится предложение?
+      options:
+        - Исправление раскладки
+        - Голосовой ввод
+        - Модели Whisper
+        - Горячие клавиши
+        - Интерфейс и настройки
+        - Автоматическое обновление
+        - Windows
+        - macOS
+        - Документация
+        - Другое
+    validations:
+      required: true
+
+  - type: textarea
+    id: usage-example
+    attributes:
+      label: Пример использования
+      description: Опишите ситуацию, в которой эта функция будет полезна.
+      placeholder: |
+        1. Пользователь нажимает...
+        2. Приложение...
+        3. В результате...
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Возможные альтернативы
+      description: Расскажите о других вариантах решения проблемы.
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Дополнительная информация
+      description: Добавьте макеты, скриншоты, ссылки или другие пояснения.
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Подтверждение
+      options:
+        - label: Я проверил, что похожая функция ещё не предлагалась.
+          required: true
+        - label: Я описал проблему, а не только желаемую реализацию.
+          required: true

@@ -1,0 +1,6 @@
+blank_issues_enabled: false
+
+contact_links:
+  - name: 🔐 Сообщить об уязвимости
+    url: https://github.com/Woonze/Fotur_Typing_Helper/security/advisories/new
+    about: Не публикуйте сведения об уязвимостях в открытых Issue.

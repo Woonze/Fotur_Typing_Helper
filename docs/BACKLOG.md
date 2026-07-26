@@ -6,7 +6,7 @@
 
 - [x] Версия продукта, installer и документация синхронизированы на 1.3.0.
 - [x] Исправлена проверка обновлений через GitHub Releases: выбор platform asset, SHA-256, нормальная обработка 404/latest и понятные статусы вместо общей ошибки.
-- [x] Добавлена экспериментальная Linux x64-сборка с отдельным workflow, `build-linux.sh`, локальной Whisper-диктовкой, `arecord` для записи и `xdotool` для вставки на X11.
+- [x] Добавлена Linux x64-сборка с отдельным workflow, `build-linux.sh`, локальной Whisper-диктовкой, `arecord` для записи, `xinput`/XKB для глобальных клавиатурных событий и `xdotool` для замены текста на X11.
 - [x] Главный проект использует условные platform references по RID, поэтому release publish больше не тащит managed DLL чужих платформ.
 - [x] Релизные пакеты очищены от чужих native runtime: Windows оставляет `win-x64`, macOS — `macos-arm64` или `macos-x64` плюс `coreml`, Linux — `linux-x64`.
 - [x] Пользовательские пакеты не включают `.pdb`; symbols публикуются отдельно.
@@ -14,7 +14,7 @@
 - [x] `LICENSE` и `THIRD_PARTY_NOTICES.md` включены в ZIP/TAR/DMG/установленную директорию; Inno Setup показывает MIT LicenseFile.
 - [x] Версия Inno Setup передаётся из `Directory.Build.props` через `/DAppVersion=...`.
 - [x] Восстановлены повреждённые UTF-8 строки в UI, документации и GitHub Issue templates.
-- [~] Linux: UI и локальная диктовка собраны, но глобальные хоткеи/автокоррекция отключены до отдельной реализации безопасного input hook под X11/Wayland.
+- [~] Linux X11: глобальные хоткеи и автокоррекция реализованы через XInput2/XKB и xdotool; Wayland остаётся ограниченным системными политиками compositor.
 - [x] macOS-обводка диктовки стала click-through на уровне `NSWindow.setIgnoresMouseEvents`.
 - [x] macOS при запуске проверяет Input Monitoring и Accessibility, запрашивает права и ждёт их в фоне без закрытия приложения.
 - [x] В настройках добавлен macOS-блок разрешений с кнопками открытия Input Monitoring, Accessibility и Microphone.
@@ -74,7 +74,7 @@
 | Windows Terminal/PowerShell | [ ] | [ ] | безопасный режим для команд |
 | ChatGPT/Codex desktop | [ ] | [ ] | Electron и нативные поля |
 | macOS TextEdit/Safari/Chrome | [~] | [~] | адаптер готов, требуется тест на физическом Mac |
-| Linux X11 | [ ] | [~] | experimental: UI и диктовка есть, автокоррекция/глобальные хоткеи в backlog |
+| Linux X11/XWayland | [~] | [~] | глобальные хоткеи, автокоррекция и диктовка реализованы; нужна ручная проверка на популярных DE |
 | Linux Wayland | [ ] | [~] | synthetic input ограничен окружением, нужна отдельная стратегия |
 
 ## Безопасность и дальнейшие платформы

@@ -24,7 +24,7 @@ internal static class PlatformServiceFactory
         {
             var injection = Create<ITextInjectionService>("FoturTypingHelper.Linux.LinuxTextInjectionService, FoturTypingHelper.Linux");
             return new(
-                Create<IKeyboardService>("FoturTypingHelper.Linux.LinuxKeyboardService, FoturTypingHelper.Linux"),
+                Create<IKeyboardService>("FoturTypingHelper.Linux.LinuxKeyboardService, FoturTypingHelper.Linux", settings, injection),
                 Create<IAudioRecorder>("FoturTypingHelper.Linux.LinuxAudioRecorder, FoturTypingHelper.Linux"),
                 Create<IDictationService>("FoturTypingHelper.Linux.LinuxLocalDictationService, FoturTypingHelper.Linux"),
                 injection,

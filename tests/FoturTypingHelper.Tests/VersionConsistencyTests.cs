@@ -5,10 +5,10 @@ namespace FoturTypingHelper.Tests;
 public sealed class VersionConsistencyTests
 {
     [Fact]
-    public void ReleaseFacingFilesUseVersion110()
+    public void ReleaseFacingFilesUseVersion120()
     {
         var root = FindRepositoryRoot();
-        const string version = "1.1.0";
+        const string version = "1.2.0";
         Assert.Contains($"<Version>{version}</Version>", Read(root, "Directory.Build.props"));
         Assert.Contains($"#define AppVersion \"{version}\"", Read(root, "installer/FoturTypingHelper.iss"));
         Assert.Contains($"version=\"{version}.0\"", Read(root, "src/FoturTypingHelper.App/app.manifest"));

@@ -54,6 +54,16 @@ public sealed class LayoutCorrectionTests
         Assert.False(new LanguageScorer().Evaluate(source).ShouldCorrect);
     }
 
+    [Theory]
+    [InlineData("docker compose")]
+    [InlineData("docker compose up")]
+    [InlineData("git pull request")]
+    [InlineData("json config")]
+    public void Scorer_KeepsTechnicalEnglishPhrases(string source)
+    {
+        Assert.False(new LanguageScorer().Evaluate(source, 0.60).ShouldCorrect);
+    }
+
     [Fact]
     public void Scorer_RepairsMixedPhraseAfterDelayedLayoutSwitch()
     {

@@ -25,6 +25,7 @@ internal static class MacNative
     [DllImport(ApplicationServices)] internal static extern long CGEventGetIntegerValueField(nint cgEvent, int field);
     [DllImport(ApplicationServices)] internal static extern void CGEventSetIntegerValueField(nint cgEvent, int field, long value);
     [DllImport(ApplicationServices)] internal static extern ulong CGEventGetFlags(nint cgEvent);
+    [DllImport(ApplicationServices)] internal static extern ulong CGEventSourceFlagsState(int stateId);
     [DllImport(ApplicationServices)] internal static extern void CGEventKeyboardGetUnicodeString(nint cgEvent, nuint maxLength, out nuint actualLength, [Out] char[] unicodeString);
     [DllImport(ApplicationServices)] internal static extern nint CGEventCreateKeyboardEvent(nint source, ushort virtualKey, bool keyDown);
     [DllImport(ApplicationServices)] internal static extern void CGEventKeyboardSetUnicodeString(nint cgEvent, nuint length, char[] unicodeString);

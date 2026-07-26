@@ -1,4 +1,4 @@
-# Архитектура 1.1.0
+# Архитектура 1.2.0
 
 ```text
 FoturTypingHelper.App       Avalonia UI, tray, screen-edge overlay, runtime, updater

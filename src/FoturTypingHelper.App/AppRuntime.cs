@@ -108,7 +108,10 @@ public sealed class AppRuntime : IDisposable
                 var inserted = _injection.SendText(text + " ");
                 if (!inserted)
                 {
-                    StatusChanged?.Invoke(this, "Текст распознан, но macOS запретила его вставку. Включите Fotur в Настройки системы → Конфиденциальность и безопасность → Универсальный доступ и перезапустите приложение.");
+                    var platform = OperatingSystem.IsLinux()
+                        ? "Текст распознан, но Linux не разрешил вставку. На X11 установите xdotool; на Wayland вставка пока ограничена системой."
+                        : "Текст распознан, но macOS запретила его вставку. Включите Fotur в Системные настройки → Конфиденциальность и безопасность → Универсальный доступ и перезапустите приложение.";
+                    StatusChanged?.Invoke(this, platform);
                     return;
                 }
                 if (_store.State.Settings.LocalStatisticsEnabled)

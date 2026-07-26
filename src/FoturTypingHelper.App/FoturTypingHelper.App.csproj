@@ -22,7 +22,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FoturTypingHelper.Core\FoturTypingHelper.Core.csproj" />
-    <ProjectReference Include="..\FoturTypingHelper.Windows\FoturTypingHelper.Windows.csproj" />
-    <ProjectReference Include="..\FoturTypingHelper.Mac\FoturTypingHelper.Mac.csproj" />
+    <ProjectReference Include="..\FoturTypingHelper.Windows\FoturTypingHelper.Windows.csproj" Condition="'$(RuntimeIdentifier)' == '' Or $([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('win-'))" />
+    <ProjectReference Include="..\FoturTypingHelper.Mac\FoturTypingHelper.Mac.csproj" Condition="'$(RuntimeIdentifier)' == '' Or $([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('osx-'))" />
+    <ProjectReference Include="..\FoturTypingHelper.Linux\FoturTypingHelper.Linux.csproj" Condition="'$(RuntimeIdentifier)' == '' Or $([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('linux-'))" />
   </ItemGroup>
 </Project>

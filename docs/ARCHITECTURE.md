@@ -1,4 +1,4 @@
-# Архитектура 1.2.0
+# Архитектура 1.3.0
 
 ```text
 FoturTypingHelper.App       Avalonia UI, tray, screen-edge overlay, runtime, updater
@@ -29,3 +29,10 @@ Windows включает CPU runtime. macOS предпочитает CoreML и �
 На старте фоновая задача читает `/releases/latest`, сравнивает SemVer и выбирает `win-x64.exe`, `macos-arm64.zip` либо `macos-x64.zip`. Пакет принимается только при совпадении SHA-256. Windows передаёт установку Inno Setup; macOS helper заменяет установленный `.app` после выхода текущего процесса.
 
 Updater не считает prerelease последней стабильной версией. SHA-файл и пакет размещены в одном GitHub Release, поэтому для защиты от компрометации аккаунта в будущем нужен отдельно подписанный манифест.
+
+
+## Платформенное разделение 1.3.0
+
+Главное приложение больше не публикует все платформенные адаптеры сразу. `FoturTypingHelper.App.csproj` подключает `FoturTypingHelper.Windows`, `FoturTypingHelper.Mac` или `FoturTypingHelper.Linux` условно по `RuntimeIdentifier`. `PlatformServiceFactory` создаёт сервисы через runtime type loading, поэтому publish под `win-x64`, `osx-arm64`, `osx-x64` и `linux-x64` получает только нужный managed platform DLL.
+
+Это уменьшает размер пакетов, упрощает аудит, снижает поверхность атаки и убирает странную ситуацию, когда Windows-дистрибутив содержит macOS/Linux-компоненты или наоборот.

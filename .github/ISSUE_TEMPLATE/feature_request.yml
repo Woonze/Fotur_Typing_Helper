@@ -40,6 +40,7 @@ body:
         - Автоматическое обновление
         - Windows
         - macOS
+        - Linux
         - Документация
         - Другое
     validations:

@@ -10,6 +10,7 @@ esac
 root="$(cd "$(dirname "$0")/.." && pwd)"
 version="$(sed -n 's:.*<Version>\([^<]*\)</Version>.*:\1:p' "$root/Directory.Build.props")"
 arch="${rid#osx-}"
+native_rid="macos-$arch"
 publish="$root/artifacts/publish-$rid"
 stage="$root/artifacts/stage-$rid"
 app="$stage/Fotur Typing Helper.app"
@@ -22,6 +23,7 @@ volume_name="Fotur Typing Helper"
 rw_dmg="$artifacts/FoturTypingHelper-$version-macos-$arch-rw.dmg"
 mount_point="$artifacts/mount-$rid"
 mounted_device=""
+symbols_dir="$artifacts/symbols-macos-$arch"
 
 cleanup() {
   if [[ -n "$mounted_device" ]]; then
@@ -32,18 +34,58 @@ cleanup() {
 trap cleanup EXIT
 
 rm -rf "$publish" "$stage" "$iconset" "$mount_point"
+rm -rf "$symbols_dir"
 rm -f "$rw_dmg"
 mkdir -p "$publish" "$contents/MacOS" "$contents/Resources"
+
+remove_disallowed_runtimes() {
+  local runtime_root="$1"
+  shift
+  [[ -d "$runtime_root" ]] || return 0
+  local allowed=" $* "
+  local child
+  for child in "$runtime_root"/*; do
+    [[ -d "$child" ]] || continue
+    local name
+    name="$(basename "$child")"
+    if [[ "$allowed" != *" $name "* ]]; then
+      rm -rf "$child"
+    fi
+  done
+}
+
+move_symbols() {
+  local source="$1"
+  local target="$2"
+  mkdir -p "$target"
+  while IFS= read -r -d '' pdb; do
+    local rel="${pdb#$source/}"
+    mkdir -p "$target/$(dirname "$rel")"
+    mv "$pdb" "$target/$rel"
+  done < <(find "$source" -name '*.pdb' -print0)
+}
 
 dotnet test "$root/tests/FoturTypingHelper.Tests/FoturTypingHelper.Tests.csproj" -c Release
 dotnet publish "$root/src/FoturTypingHelper.App/FoturTypingHelper.App.csproj" \
   -c Release -r "$rid" --self-contained true -p:PublishSingleFile=false -o "$publish"
 
 ditto "$publish" "$contents/MacOS"
+remove_disallowed_runtimes "$contents/MacOS/runtimes" "$native_rid" "coreml"
+move_symbols "$contents/MacOS" "$symbols_dir"
+ditto "$root/LICENSE" "$contents/Resources/LICENSE"
+ditto "$root/THIRD_PARTY_NOTICES.md" "$contents/Resources/THIRD_PARTY_NOTICES.md"
 chmod +x "$contents/MacOS/FoturTypingHelper.App"
 native_library="$(find "$contents/MacOS" -name libwhisper.dylib -print -quit)"
 if [[ -z "$native_library" ]]; then
   echo "Whisper native library is missing from the macOS publish output" >&2
+  exit 1
+fi
+if find "$contents/MacOS/runtimes" -mindepth 1 -maxdepth 1 -type d ! -name "$native_rid" ! -name coreml -print -quit | grep -q .; then
+  echo "Unexpected non-macOS runtime remained in app bundle" >&2
+  exit 1
+fi
+if find "$contents/MacOS" -name '*.pdb' -print -quit | grep -q .; then
+  echo "PDB files are still present in macOS app bundle" >&2
   exit 1
 fi
 
@@ -155,6 +197,9 @@ hdiutil imageinfo "$dmg_path" >/dev/null
 (
   cd "$artifacts"
   shasum -a 256 "$(basename "$zip_path")" "$(basename "$dmg_path")" > "SHA256SUMS-macos-$arch.txt"
+  if [[ -d "$symbols_dir" ]]; then
+    ditto -c -k --sequesterRsrc --keepParent "$(basename "$symbols_dir")" "FoturTypingHelper-$version-macos-$arch-symbols.zip"
+  fi
 )
 file "$contents/MacOS/FoturTypingHelper.App" "$native_library"
 echo "Created $dmg_path and $zip_path"

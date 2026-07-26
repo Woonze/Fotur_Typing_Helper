@@ -26,7 +26,8 @@ $requiredSuffixes = @(
     "macos-arm64.dmg",
     "macos-arm64.zip",
     "macos-x64.dmg",
-    "macos-x64.zip"
+    "macos-x64.zip",
+    "linux-x64.tar.gz"
 )
 $assetNames = @($release.assets | ForEach-Object { [string]$_.name })
 foreach ($suffix in $requiredSuffixes) {
@@ -38,7 +39,8 @@ foreach ($suffix in $requiredSuffixes) {
 $requiredChecksums = @(
     "SHA256SUMS.txt",
     "SHA256SUMS-macos-arm64.txt",
-    "SHA256SUMS-macos-x64.txt"
+    "SHA256SUMS-macos-x64.txt",
+    "SHA256SUMS-linux-x64.txt"
 )
 foreach ($checksum in $requiredChecksums) {
     if ($assetNames -notcontains $checksum) {

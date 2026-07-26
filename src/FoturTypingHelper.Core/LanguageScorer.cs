@@ -14,7 +14,9 @@ public sealed class LanguageScorer
         "когда","если","уже","только","очень","всё","все","тоже","ещё","еще","программа","проект","сделать",
         "готово","интерфейс","браузер","редактор","сообщение","проверка","данные","модель","диктовка","микрофон",
         "автокоррекция","исправление","результат","обновление","установщик","словарь","ошибка","тишина","пунктуация",
-        "доброе","давай","отправь","выбери","открой","александр","екатерина","кирилл","москва"
+        "доброе","давай","отправь","выбери","открой","александр","екатерина","кирилл","москва","релиз","версия",
+        "скачать","сборка","ссылка","документ","функция","настройки","разрешения","компьютер","экран","окно",
+        "нужно","надо","можешь","можем","сделай","проверь","исправь","добавь","удали","замени"
     };
 
     private static readonly HashSet<string> CommonEnglish = new(StringComparer.OrdinalIgnoreCase)
@@ -29,19 +31,19 @@ public sealed class LanguageScorer
         "sentence","clearer","remove","unnecessary","filler","words","hotkey","conflicts","available","github","interface",
         "professional","color","moves","smoothly","every","error","needs","clear","explanation","person","types","final","keyboard","ready",
         "docker","compose","kubernetes","cluster","container","containers","image","images","volume","volumes","service","services",
-        "redis","postgres","mysql","nginx","node","react","dotnet","avalonia","whisper","chrome","macos","windows","codex",
+        "redis","postgres","mysql","nginx","node","react","dotnet","avalonia","whisper","chrome","macos","windows","linux","codex",
         "chatgpt","openai","api","json","yaml","yml","http","https","localhost","config","env","shell","terminal","powershell",
-        "git","commit","branch","merge","pull","request","release","build","test","tests","runner","workflow","workflows",
-        "up","down","restart","logs","exec"
+        "git","commit","branch","merge","pull","push","fetch","clone","checkout","rebase","request","release","build","test","tests","runner","workflow","workflows",
+        "up","down","restart","logs","exec","install","update","upgrade","remove","run","start","stop"
     };
 
     private static readonly HashSet<string> TechnicalSafeTokens = new(StringComparer.OrdinalIgnoreCase)
     {
         "docker","compose","docker-compose","kubernetes","kubectl","k8s","redis","postgres","postgresql","mysql","nginx",
-        "node","npm","pnpm","yarn","react","vue","svelte","dotnet","avalonia","whisper","openai","chatgpt","codex",
+        "node","npm","pnpm","yarn","bun","npx","react","vue","svelte","dotnet","avalonia","whisper","openai","chatgpt","codex",
         "api","sdk","json","yaml","yml","xml","html","css","js","ts","tsx","jsx","http","https","localhost",
-        "env","config","git","github","commit","branch","merge","pull","request","pr","ci","cd","dmg","zip","exe",
-        "up","down","restart","logs","exec"
+        "env","config","git","github","commit","branch","merge","pull","push","fetch","clone","checkout","rebase","request","pr","ci","cd","dmg","zip","exe","tar","gz",
+        "up","down","restart","logs","exec","install","update","upgrade","remove","run","start","stop"
     };
 
     private static readonly string[] RussianPatterns =
@@ -63,8 +65,8 @@ public sealed class LanguageScorer
         if (AllTokensAreProtected(word))
             return new(false, word, word, TextLanguage.English, 0);
 
-        var hasCyrillic = word.Any(c => c is >= 'А' and <= 'я' or 'Ё' or 'ё');
-        var hasLatin = word.Any(c => c is >= 'A' and <= 'z');
+        var hasCyrillic = word.Any(IsCyrillic);
+        var hasLatin = word.Any(c => c is >= 'A' and <= 'Z' or >= 'a' and <= 'z');
         if (!hasCyrillic && !hasLatin) return new(false, word, word, TextLanguage.Unknown, 0);
         if (hasCyrillic && hasLatin)
         {
@@ -99,7 +101,7 @@ public sealed class LanguageScorer
         var common = language == TextLanguage.Russian ? CommonRussian : CommonEnglish;
         var patterns = language == TextLanguage.Russian ? RussianPatterns : EnglishPatterns;
         var tokens = normalized.Split([' ', '\t', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
-            .Select(token => token.Trim(',', '.', '!', '?', ':', ';', '"', '(', ')'))
+            .Select(token => token.Trim(',', '.', '!', '?', ':', ';', '"', '\'', '(', ')', '[', ']', '{', '}'))
             .Where(token => token.Length > 0)
             .ToArray();
         var score = tokens.Sum(token => common.Contains(token) ? 4.8 : 0);
@@ -123,7 +125,7 @@ public sealed class LanguageScorer
 
     private double ScoreDetectedTokens(string phrase) => phrase
         .Split([' ', '\t', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
-        .Sum(token => token.Any(c => c is >= 'А' and <= 'я' or 'Ё' or 'ё')
+        .Sum(token => token.Any(IsCyrillic)
             ? Score(token, TextLanguage.Russian)
             : Score(token, TextLanguage.English));
 
@@ -142,5 +144,6 @@ public sealed class LanguageScorer
             token.Contains('-') && token.Any(char.IsLetter));
     }
 
+    private static bool IsCyrillic(char c) => c is >= 'А' and <= 'я' or 'Ё' or 'ё';
     private static double Sigmoid(double value) => 1d / (1d + Math.Exp(-value));
 }

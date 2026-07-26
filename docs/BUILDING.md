@@ -1,4 +1,4 @@
-# Сборка и проверка 1.2.0
+# Сборка и проверка 1.3.0
 
 ## Windows x64
 
@@ -12,16 +12,16 @@ dotnet test FoturTypingHelper.sln -c Release
 
 Результаты:
 
-- `artifacts/installer/FoturTypingHelper-Setup-1.2.0-win-x64.exe`
-- `artifacts/FoturTypingHelper-1.2.0-win-x64-portable.zip`
+- `artifacts/installer/FoturTypingHelper-Setup-1.3.0-win-x64.exe`
+- `artifacts/FoturTypingHelper-1.3.0-win-x64-portable.zip`
 
 После публикации стабильного релиза endpoint автообновления и полный набор платформенных файлов проверяются командой:
 
 ```powershell
-.\scripts\verify-release-feed.ps1 -ExpectedVersion 1.2.0
+.\scripts\verify-release-feed.ps1 -ExpectedVersion 1.3.0
 ```
 
-До публикации 1.2.0 скрипт ожидаемо показывает предыдущий стабильный релиз; prerelease и draft встроенный updater не видит.
+До публикации 1.3.0 скрипт ожидаемо показывает предыдущий стабильный релиз; prerelease и draft встроенный updater не видит.
 - `artifacts/SHA256SUMS.txt`
 
 Реальный браузерный стенд:
@@ -54,3 +54,20 @@ GitHub Actions выполняет эти команды раздельно: `mac
 Перед повторным тестом проблемного DMG удалите старую запись Fotur из «Мониторинг ввода» и «Универсальный доступ», добавьте приложение из `/Applications` заново, включите оба переключателя и полностью перезапустите Fotur. Затем отдельно проверьте: глобальный хоткей вне окна программы, обычную диктовку в TextEdit/Safari и автозамену `ghbdtn` → `привет`. Счётчик исправлений не должен расти, если macOS заблокировала отправку текста.
 
 Для публичной бесшовной установки нужны Developer ID Application, hardened runtime, notarization и stapling. Секреты сертификата в репозиторий добавлять нельзя; они настраиваются только через GitHub Actions Secrets.
+
+
+### Linux x64
+
+Linux artifact собирается скриптом:
+
+```bash
+scripts/build-linux.sh linux-x64
+```
+
+Результат:
+
+- `artifacts/FoturTypingHelper-1.3.0-linux-x64.tar.gz`
+- `artifacts/FoturTypingHelper-1.3.0-linux-x64-symbols.tar.gz`
+- `artifacts/SHA256SUMS-linux-x64.txt`
+
+Скрипт запускает тесты, публикует self-contained `linux-x64`, оставляет только runtime целевой платформы, выносит `.pdb` в symbols-архив и добавляет `LICENSE`/`THIRD_PARTY_NOTICES.md`.

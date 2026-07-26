@@ -4,7 +4,6 @@ using Avalonia.Interactivity;
 using Avalonia.Input;
 using Avalonia.Media;
 using FoturTypingHelper.Core;
-using FoturTypingHelper.Mac;
 using System.Reflection;
 
 namespace FoturTypingHelper.App;
@@ -56,11 +55,11 @@ public partial class MainWindow : Window
         UpdateHotkeyLabels();
         ConfidenceValueText.Text = $"{s.CorrectionConfidence:P0}";
         ModelStatusText.Text = $"Whisper {s.SpeechModel} · " + (_runtime.IsModelInstalled ? "готова" : "загрузится при первом запуске");
-        var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.2.0";
+        var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.3.0";
         var platform = OperatingSystem.IsMacOS()
             ? (System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "macOS Apple Silicon" : "macOS Intel")
-            : "Windows x64";
-        AboutVersionText.Text = $"Версия {version} · 26 июля 2026 · MIT · {platform}";
+            : OperatingSystem.IsLinux() ? "Linux x64" : "Windows x64";
+        AboutVersionText.Text = $"Версия {version} · 27 июля 2026 · MIT · {platform}";
         UpdateMacPermissions();
         UpdateStatistics(); _loading = false;
     }
@@ -126,9 +125,9 @@ public partial class MainWindow : Window
 
     private async void ToggleDictation(object? sender, RoutedEventArgs e) => await _runtime.ToggleDictationAsync();
     private void RefreshMacPermissions(object? sender, RoutedEventArgs e) => UpdateMacPermissions();
-    private void OpenMacInputMonitoring(object? sender, RoutedEventArgs e) { MacSystemSettings.OpenInputMonitoring(); UpdateMacPermissions(); }
-    private void OpenMacAccessibility(object? sender, RoutedEventArgs e) { MacSystemSettings.OpenAccessibility(); UpdateMacPermissions(); }
-    private void OpenMacMicrophone(object? sender, RoutedEventArgs e) => MacSystemSettings.OpenMicrophone();
+    private void OpenMacInputMonitoring(object? sender, RoutedEventArgs e) { InvokeMacSystemSettings("OpenInputMonitoring"); UpdateMacPermissions(); }
+    private void OpenMacAccessibility(object? sender, RoutedEventArgs e) { InvokeMacSystemSettings("OpenAccessibility"); UpdateMacPermissions(); }
+    private void OpenMacMicrophone(object? sender, RoutedEventArgs e) => InvokeMacSystemSettings("OpenMicrophone");
     private void ShowDashboard(object? sender, RoutedEventArgs e) => ShowPanel(DashboardPanel);
     private void ShowCorrection(object? sender, RoutedEventArgs e) => ShowPanel(CorrectionPanel);
     private void ShowDictation(object? sender, RoutedEventArgs e) => ShowPanel(DictationPanel);
@@ -190,13 +189,28 @@ public partial class MainWindow : Window
     {
         MacPermissionsCard.IsVisible = OperatingSystem.IsMacOS();
         if (!OperatingSystem.IsMacOS()) return;
-        var permissions = MacSystemSettings.GetPermissions();
+        var permissions = GetMacPermissions();
         MacInputMonitoringStatus.Text = permissions.InputMonitoring ? "разрешено" : "нужно включить";
         MacInputMonitoringStatus.Foreground = Brush.Parse(permissions.InputMonitoring ? "#52E58A" : "#FF7A8A");
         MacAccessibilityStatus.Text = permissions.Accessibility ? "разрешено" : "нужно включить";
         MacAccessibilityStatus.Foreground = Brush.Parse(permissions.Accessibility ? "#52E58A" : "#FF7A8A");
     }
 
+    private static (bool InputMonitoring, bool Accessibility) GetMacPermissions()
+    {
+        var type = Type.GetType("FoturTypingHelper.Mac.MacSystemSettings, FoturTypingHelper.Mac", throwOnError: true)!;
+        var snapshot = type.GetMethod("GetPermissions")!.Invoke(null, null)!;
+        var inputMonitoring = (bool)snapshot.GetType().GetProperty("InputMonitoring")!.GetValue(snapshot)!;
+        var accessibility = (bool)snapshot.GetType().GetProperty("Accessibility")!.GetValue(snapshot)!;
+        return (inputMonitoring, accessibility);
+    }
+
+    private static void InvokeMacSystemSettings(string methodName)
+    {
+        if (!OperatingSystem.IsMacOS()) return;
+        var type = Type.GetType("FoturTypingHelper.Mac.MacSystemSettings, FoturTypingHelper.Mac", throwOnError: true)!;
+        type.GetMethod(methodName)!.Invoke(null, null);
+    }
     private static bool IsModifierKey(Key key) => key is Key.LeftCtrl or Key.RightCtrl or Key.LeftAlt or Key.RightAlt or Key.LeftShift or Key.RightShift or Key.LWin or Key.RWin;
     private static string PrettyHotkey(string value) => value.Replace("+", " + ");
     private static string KeyName(Key key)

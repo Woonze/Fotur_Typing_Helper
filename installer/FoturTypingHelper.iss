@@ -1,5 +1,7 @@
 #define AppName "Fotur Typing Helper"
-#define AppVersion "1.2.0"
+#ifndef AppVersion
+  #define AppVersion "0.0.0-local"
+#endif
 #define AppPublisher "Fotur"
 #define AppExeName "FoturTypingHelper.App.exe"
 
@@ -24,6 +26,7 @@ SetupLogging=yes
 UninstallDisplayIcon={app}\{#AppExeName}
 CloseApplications=yes
 RestartApplications=no
+LicenseFile=..\LICENSE
 
 [Languages]
 Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
@@ -38,7 +41,9 @@ russian.StartupTask=Запускать Fotur Typing Helper вместе с Windo
 english.StartupTask=Start Fotur Typing Helper with Windows
 
 [Files]
-Source: "..\artifacts\publish\*"; DestDir: "{app}"; Excludes: "*.pdb,runtimes\linux-*,runtimes\macos-*,runtimes\win-arm64\*,runtimes\win-x86\*,ggml-metal.metal"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\artifacts\publish\*"; DestDir: "{app}"; Excludes: "*.pdb,runtimes\linux-*,runtimes\osx-*,runtimes\macos-*,runtimes\win-arm64\*,runtimes\win-x86\*,ggml-metal.metal"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExeName}"

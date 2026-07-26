@@ -1,6 +1,4 @@
 using FoturTypingHelper.Core;
-using FoturTypingHelper.Mac;
-using FoturTypingHelper.Windows;
 
 namespace FoturTypingHelper.App;
 
@@ -13,15 +11,45 @@ internal static class PlatformServiceFactory
     {
         if (OperatingSystem.IsMacOS())
         {
-            var injection = new MacTextInjectionService();
-            return new(new MacKeyboardService(settings, injection), new MacAudioRecorder(), new MacLocalDictationService(),
-                injection, new MacActiveWindowService(), new MacAutostartService());
+            var injection = Create<ITextInjectionService>("FoturTypingHelper.Mac.MacTextInjectionService, FoturTypingHelper.Mac");
+            return new(
+                Create<IKeyboardService>("FoturTypingHelper.Mac.MacKeyboardService, FoturTypingHelper.Mac", settings, injection),
+                Create<IAudioRecorder>("FoturTypingHelper.Mac.MacAudioRecorder, FoturTypingHelper.Mac"),
+                Create<IDictationService>("FoturTypingHelper.Mac.MacLocalDictationService, FoturTypingHelper.Mac"),
+                injection,
+                Create<IActiveWindowService>("FoturTypingHelper.Mac.MacActiveWindowService, FoturTypingHelper.Mac"),
+                Create<IAutostartService>("FoturTypingHelper.Mac.MacAutostartService, FoturTypingHelper.Mac"));
         }
-        var winInjection = new TextInjectionService(); var active = new ActiveWindowService();
-        return new(new KeyboardHookService(settings, active, winInjection), new AudioRecorder(), new LocalDictationService(),
-            winInjection, active, new AutostartService());
+        if (OperatingSystem.IsLinux())
+        {
+            var injection = Create<ITextInjectionService>("FoturTypingHelper.Linux.LinuxTextInjectionService, FoturTypingHelper.Linux");
+            return new(
+                Create<IKeyboardService>("FoturTypingHelper.Linux.LinuxKeyboardService, FoturTypingHelper.Linux"),
+                Create<IAudioRecorder>("FoturTypingHelper.Linux.LinuxAudioRecorder, FoturTypingHelper.Linux"),
+                Create<IDictationService>("FoturTypingHelper.Linux.LinuxLocalDictationService, FoturTypingHelper.Linux"),
+                injection,
+                Create<IActiveWindowService>("FoturTypingHelper.Linux.LinuxActiveWindowService, FoturTypingHelper.Linux"),
+                Create<IAutostartService>("FoturTypingHelper.Linux.LinuxAutostartService, FoturTypingHelper.Linux"));
+        }
+        var winInjection = Create<ITextInjectionService>("FoturTypingHelper.Windows.TextInjectionService, FoturTypingHelper.Windows");
+        var active = Create<IActiveWindowService>("FoturTypingHelper.Windows.ActiveWindowService, FoturTypingHelper.Windows");
+        return new(
+            Create<IKeyboardService>("FoturTypingHelper.Windows.KeyboardHookService, FoturTypingHelper.Windows", settings, active, winInjection),
+            Create<IAudioRecorder>("FoturTypingHelper.Windows.AudioRecorder, FoturTypingHelper.Windows"),
+            Create<IDictationService>("FoturTypingHelper.Windows.LocalDictationService, FoturTypingHelper.Windows"),
+            winInjection,
+            active,
+            Create<IAutostartService>("FoturTypingHelper.Windows.AutostartService, FoturTypingHelper.Windows"));
     }
 
     public static IDictationService CreateDictationService() =>
-        OperatingSystem.IsMacOS() ? new MacLocalDictationService() : new LocalDictationService();
+        OperatingSystem.IsMacOS() ? Create<IDictationService>("FoturTypingHelper.Mac.MacLocalDictationService, FoturTypingHelper.Mac")
+        : OperatingSystem.IsLinux() ? Create<IDictationService>("FoturTypingHelper.Linux.LinuxLocalDictationService, FoturTypingHelper.Linux")
+        : Create<IDictationService>("FoturTypingHelper.Windows.LocalDictationService, FoturTypingHelper.Windows");
+
+    private static T Create<T>(string assemblyQualifiedTypeName, params object[] args)
+    {
+        var type = Type.GetType(assemblyQualifiedTypeName, throwOnError: true)!;
+        return (T)Activator.CreateInstance(type, args)!;
+    }
 }

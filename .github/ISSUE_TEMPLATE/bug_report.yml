@@ -7,7 +7,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Спасибо, что помогаете улучшать Fotur Typing Helper!
+        Спасибо, что помогаете улучшать Fotur Typing Helper.
 
         Перед созданием Issue проверьте, что похожая проблема ещё не была опубликована.
 
@@ -16,7 +16,7 @@ body:
     attributes:
       label: Версия Fotur Typing Helper
       description: Версию можно посмотреть в настройках приложения или в названии скачанного файла.
-      placeholder: Например, 1.1.0
+      placeholder: Например, 1.3.0
     validations:
       required: true
 
@@ -29,6 +29,7 @@ body:
         - Windows 11
         - macOS Apple Silicon
         - macOS Intel
+        - Linux x64
         - Другая
     validations:
       required: true
@@ -37,7 +38,7 @@ body:
     id: os-version
     attributes:
       label: Версия операционной системы
-      placeholder: Например, Windows 11 24H2 или macOS 15.5
+      placeholder: Например, Windows 11 24H2, macOS 15.5 или Ubuntu 24.04
 
   - type: dropdown
     id: installation-type
@@ -47,6 +48,7 @@ body:
         - Windows Installer
         - Windows Portable
         - macOS DMG
+        - Linux tar.gz
         - Сборка из исходного кода
         - Другое
     validations:
@@ -66,6 +68,7 @@ body:
         - Автоматическое обновление
         - Системный трей
         - Запуск приложения
+        - Упаковка релиза
         - Другое
     validations:
       required: true
@@ -83,7 +86,6 @@ body:
     id: reproduction-steps
     attributes:
       label: Как воспроизвести ошибку?
-      description: Перечислите последовательность действий.
       placeholder: |
         1. Запустить приложение
         2. Открыть настройки
@@ -96,7 +98,6 @@ body:
     id: expected-behaviour
     attributes:
       label: Ожидаемое поведение
-      placeholder: Что должно было произойти?
     validations:
       required: true
 
@@ -104,7 +105,6 @@ body:
     id: actual-behaviour
     attributes:
       label: Фактическое поведение
-      placeholder: Что произошло на самом деле?
     validations:
       required: true
 
@@ -112,21 +112,13 @@ body:
     id: logs
     attributes:
       label: Логи или текст ошибки
-      description: |
-        Вставьте сюда текст ошибки или логи. Не публикуйте пароли, токены и другую конфиденциальную информацию.
+      description: Не публикуйте пароли, токены и другие конфиденциальные данные.
       render: shell
 
   - type: textarea
     id: attachments
     attributes:
       label: Скриншоты или видео
-      description: Перетащите сюда изображения или видеозапись проблемы.
-
-  - type: textarea
-    id: additional-context
-    attributes:
-      label: Дополнительная информация
-      description: Модель микрофона, выбранная модель Whisper, используемые горячие клавиши и другие важные сведения.
 
   - type: checkboxes
     id: confirmations

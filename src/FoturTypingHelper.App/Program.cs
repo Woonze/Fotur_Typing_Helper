@@ -1,4 +1,4 @@
-﻿using Avalonia;
+using Avalonia;
 using System;
 using System.Security.Cryptography;
 using System.Text;
@@ -35,7 +35,7 @@ class Program
         using var mutex = new Mutex(true, mutexName, out var isFirstInstance);
         if (!isFirstInstance)
         {
-            if (OperatingSystem.IsWindows()) FoturTypingHelper.Windows.ExistingInstanceActivator.TryActivate();
+            if (OperatingSystem.IsWindows()) TryActivateExistingWindowsInstance();
             if (OperatingSystem.IsWindows())
                 try { EventWaitHandle.OpenExisting(activateEventName).Set(); } catch { }
             return;
@@ -62,6 +62,12 @@ class Program
             .UsePlatformDetect()
             .WithInterFont()
             .LogToTrace();
+
+    private static void TryActivateExistingWindowsInstance()
+    {
+        var type = Type.GetType("FoturTypingHelper.Windows.ExistingInstanceActivator, FoturTypingHelper.Windows", throwOnError: false);
+        type?.GetMethod("TryActivate")?.Invoke(null, null);
+    }
 
     private static string InstanceSuffix()
     {

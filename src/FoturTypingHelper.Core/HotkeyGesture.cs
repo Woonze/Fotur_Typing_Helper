@@ -50,7 +50,7 @@ public sealed record HotkeyGesture(HotkeyModifiers Modifiers, string Key)
             "Alt+F4", "Ctrl+Shift+Escape", "Ctrl+Alt+Delete"
         };
         if (reserved.Contains(first.ToString()) || reserved.Contains(second.ToString()))
-            return "Это сочетание зарезервировано Windows";
+            return "Это сочетание зарезервировано системой";
         return null;
     }
 

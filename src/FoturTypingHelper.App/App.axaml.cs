@@ -45,7 +45,11 @@ public partial class App : Application
                             desktop.Shutdown();
                         });
                 }
-                catch (Exception ex) { DiagnosticLog.Write("AutoUpdate", ex); _runtime.ReportStatus("Не удалось проверить обновления"); }
+                catch (Exception ex)
+                {
+                    DiagnosticLog.Write("AutoUpdate", ex);
+                    _runtime.ReportStatus("Не удалось проверить обновления");
+                }
             });
             var readyFile = Environment.GetEnvironmentVariable("FOTUR_READY_FILE");
             if (!string.IsNullOrWhiteSpace(readyFile))

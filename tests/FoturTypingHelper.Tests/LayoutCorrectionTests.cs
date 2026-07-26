@@ -12,7 +12,7 @@ public sealed class LayoutCorrectionTests
     [InlineData("Rbhbkk", "Кирилл")]
     public void LayoutConverter_MapsPhysicalKeys(string source, string expected)
     {
-        var result = source.Any(c => c is >= 'А' and <= 'я')
+        var result = source.Any(c => c is >= 'А' and <= 'я' or 'Ё' or 'ё')
             ? LayoutConverter.ToEnglish(source)
             : LayoutConverter.ToRussian(source);
         Assert.Equal(expected, result);
@@ -57,7 +57,10 @@ public sealed class LayoutCorrectionTests
     [Theory]
     [InlineData("docker compose")]
     [InlineData("docker compose up")]
+    [InlineData("docker compose up -d")]
     [InlineData("git pull request")]
+    [InlineData("git push origin main")]
+    [InlineData("npm install")]
     [InlineData("json config")]
     public void Scorer_KeepsTechnicalEnglishPhrases(string source)
     {
@@ -107,6 +110,6 @@ public sealed class LayoutCorrectionTests
         Assert.True(HotkeyGesture.TryParse("command + space", out var macGesture, out _));
         Assert.Equal("Cmd+Space", macGesture.ToString());
         Assert.Equal("Сочетания диктовки и отмены совпадают", HotkeyGesture.ValidatePair("Ctrl+Shift+D", "Ctrl+Shift+D"));
-        Assert.Equal("Это сочетание зарезервировано Windows", HotkeyGesture.ValidatePair("Alt+F4", "Ctrl+Alt+Backspace"));
+        Assert.Equal("Это сочетание зарезервировано системой", HotkeyGesture.ValidatePair("Alt+F4", "Ctrl+Alt+Backspace"));
     }
 }

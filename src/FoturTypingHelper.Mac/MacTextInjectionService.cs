@@ -16,6 +16,7 @@ public sealed class MacTextInjectionService : ITextInjectionService
     internal bool ReplacePrevious(string original, string replacement, TextLanguage language)
     {
         if (!EnsurePostAccess()) return false;
+        using var modifiers = TemporarilyReleaseModifiers();
         for (var i = 0; i < original.Length; i++) PostKey(51);
         PostUnicode(replacement);
         SwitchLayout(language);
@@ -60,5 +61,41 @@ public sealed class MacTextInjectionService : ITextInjectionService
         var source = MacNative.TISCopyInputSourceForLanguage(code);
         if (source != 0) { MacNative.TISSelectInputSource(source); MacNative.CFRelease(source); }
         MacNative.CFRelease(code);
+    }
+
+    private static ModifierScope TemporarilyReleaseModifiers()
+    {
+        var flags = MacNative.CGEventSourceFlagsState(0);
+        var pressed = new List<ushort>();
+        if ((flags & MacNative.Shift) != 0) pressed.Add(56);
+        if ((flags & MacNative.Control) != 0) pressed.Add(59);
+        if ((flags & MacNative.Alternate) != 0) pressed.Add(58);
+        if ((flags & MacNative.Command) != 0) pressed.Add(55);
+        foreach (var key in pressed) PostKeyUp(key);
+        return new ModifierScope(pressed);
+    }
+
+    private static void PostKeyUp(ushort key)
+    {
+        var e = MacNative.CGEventCreateKeyboardEvent(0, key, false);
+        MacNative.CGEventSetIntegerValueField(e, MacNative.EventSourceUserData, (long)MacNative.Marker);
+        MacNative.CGEventPost(0, e);
+        MacNative.CFRelease(e);
+    }
+
+    private static void PostKeyDown(ushort key)
+    {
+        var e = MacNative.CGEventCreateKeyboardEvent(0, key, true);
+        MacNative.CGEventSetIntegerValueField(e, MacNative.EventSourceUserData, (long)MacNative.Marker);
+        MacNative.CGEventPost(0, e);
+        MacNative.CFRelease(e);
+    }
+
+    private sealed class ModifierScope(IReadOnlyList<ushort> pressed) : IDisposable
+    {
+        public void Dispose()
+        {
+            for (var i = pressed.Count - 1; i >= 0; i--) PostKeyDown(pressed[i]);
+        }
     }
 }

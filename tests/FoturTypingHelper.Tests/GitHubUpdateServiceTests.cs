@@ -9,18 +9,18 @@ public sealed class GitHubUpdateServiceTests
     private const string ReleaseJson =
         """
         {
-          "tag_name": "v1.1.0",
+          "tag_name": "v1.2.0",
           "assets": [
             {
-              "name": "FoturTypingHelper-Setup-1.1.0-win-x64.exe",
+              "name": "FoturTypingHelper-Setup-1.2.0-win-x64.exe",
               "browser_download_url": "https://example.test/windows"
             },
             {
-              "name": "FoturTypingHelper-1.1.0-macos-arm64.zip",
+              "name": "FoturTypingHelper-1.2.0-macos-arm64.zip",
               "browser_download_url": "https://example.test/macos-arm64"
             },
             {
-              "name": "FoturTypingHelper-1.1.0-macos-x64.zip",
+              "name": "FoturTypingHelper-1.2.0-macos-x64.zip",
               "browser_download_url": "https://example.test/macos-x64"
             },
             {
@@ -40,9 +40,9 @@ public sealed class GitHubUpdateServiceTests
         """;
 
     [Theory]
-    [InlineData(true, Architecture.X64, "FoturTypingHelper-Setup-1.1.0-win-x64.exe", "https://example.test/windows-sums")]
-    [InlineData(false, Architecture.Arm64, "FoturTypingHelper-1.1.0-macos-arm64.zip", "https://example.test/arm64-sums")]
-    [InlineData(false, Architecture.X64, "FoturTypingHelper-1.1.0-macos-x64.zip", "https://example.test/x64-sums")]
+    [InlineData(true, Architecture.X64, "FoturTypingHelper-Setup-1.2.0-win-x64.exe", "https://example.test/windows-sums")]
+    [InlineData(false, Architecture.Arm64, "FoturTypingHelper-1.2.0-macos-arm64.zip", "https://example.test/arm64-sums")]
+    [InlineData(false, Architecture.X64, "FoturTypingHelper-1.2.0-macos-x64.zip", "https://example.test/x64-sums")]
     public void ReleaseAssetsAreSelectedForTheCurrentPlatform(
         bool windows,
         Architecture architecture,
@@ -51,7 +51,7 @@ public sealed class GitHubUpdateServiceTests
     {
         var selection = GitHubUpdateService.ParseRelease(ReleaseJson, windows, architecture);
 
-        Assert.Equal(new Version(1, 1, 0), selection.Version);
+        Assert.Equal(new Version(1, 2, 0), selection.Version);
         Assert.Equal(expectedAsset, selection.AssetName);
         Assert.Equal(expectedChecksum, selection.ChecksumUrl);
     }
@@ -60,24 +60,24 @@ public sealed class GitHubUpdateServiceTests
     public async Task CurrentReleaseReportsInstalledAndGitHubVersions()
     {
         using var http = new HttpClient(new JsonHandler(ReleaseJson));
-        var service = new GitHubUpdateService(http, new Version(1, 1, 0));
+        var service = new GitHubUpdateService(http, new Version(1, 2, 0));
 
         var result = await service.CheckAndInstallAsync(new AppSettings { AutoUpdateEnabled = true });
 
         Assert.NotNull(result);
         Assert.False(result.Restarting);
-        Assert.Equal("Установлена актуальная версия 1.1.0 · GitHub: 1.1.0", result.Message);
+        Assert.Equal("Установлена актуальная версия 1.2.0 · GitHub: 1.2.0", result.Message);
     }
 
     [Fact]
     public async Task DisabledUpdaterStillReportsTheInstalledVersion()
     {
         using var http = new HttpClient(new JsonHandler(ReleaseJson));
-        var service = new GitHubUpdateService(http, new Version(1, 1, 0));
+        var service = new GitHubUpdateService(http, new Version(1, 2, 0));
 
         var result = await service.CheckAndInstallAsync(new AppSettings { AutoUpdateEnabled = false });
 
-        Assert.Equal("Автообновление выключено · версия 1.1.0", result?.Message);
+        Assert.Equal("Автообновление выключено · версия 1.2.0", result?.Message);
     }
 
     private sealed class JsonHandler(string payload) : HttpMessageHandler

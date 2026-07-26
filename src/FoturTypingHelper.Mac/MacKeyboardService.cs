@@ -11,6 +11,7 @@ public sealed class MacKeyboardService : IKeyboardService
     private readonly List<string> _recent = [];
     private LanguageScorer _scorer;
     private readonly MacNative.EventTapCallback _callback;
+    private Timer? _permissionTimer;
     private nint _tap, _source;
     private bool _dictationDown;
     private HotkeyGesture _dictationHotkey = new(HotkeyModifiers.Ctrl | HotkeyModifiers.Alt, "Space");
@@ -28,20 +29,51 @@ public sealed class MacKeyboardService : IKeyboardService
     public void Start()
     {
         if (!OperatingSystem.IsMacOS() || _tap != 0) return;
+        CheckPermissionsAndStart(request: true);
+    }
+
+    private void CheckPermissionsAndStart(bool request)
+    {
+        if (!OperatingSystem.IsMacOS() || _tap != 0) return;
+        var listen = MacNative.CGPreflightListenEventAccess();
+        var post = _injection.CanPostEvents;
+        if (!listen || !post)
+        {
+            if (request)
+            {
+                if (!listen) MacNative.CGRequestListenEventAccess();
+                if (!post) MacNative.CGRequestPostEventAccess();
+            }
+            StatusChanged?.Invoke(this, PermissionMessage(listen, post));
+            _permissionTimer ??= new Timer(_ => CheckPermissionsAndStart(request: false), null,
+                TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(2));
+            return;
+        }
+        _permissionTimer?.Dispose();
+        _permissionTimer = null;
+        CreateTap();
+    }
+
+    private void CreateTap()
+    {
         if (!MacNative.CGPreflightListenEventAccess())
         {
             MacNative.CGRequestListenEventAccess();
-            StatusChanged?.Invoke(this, "Разрешите Fotur отслеживать клавиатуру: Настройки системы → Конфиденциальность и безопасность → Мониторинг ввода, затем перезапустите приложение.");
+            StatusChanged?.Invoke(this, PermissionMessage(false, _injection.CanPostEvents));
+            return;
         }
         if (!_injection.CanPostEvents)
         {
             MacNative.CGRequestPostEventAccess();
-            StatusChanged?.Invoke(this, PostAccessMessage);
+            StatusChanged?.Invoke(this, PermissionMessage(true, false));
+            return;
         }
         _tap = MacNative.CGEventTapCreate(0, 0, 0, (1UL << MacNative.KeyDown) | (1UL << MacNative.KeyUp) | (1UL << MacNative.FlagsChanged), _callback, 0);
         if (_tap == 0)
         {
-            StatusChanged?.Invoke(this, "Глобальные хоткеи недоступны: включите для Fotur «Мониторинг ввода» в настройках конфиденциальности macOS и перезапустите приложение. Тестовая кнопка продолжит работать.");
+            StatusChanged?.Invoke(this, "Глобальные хоткеи пока недоступны. Откройте настройки macOS из блока «Разрешения macOS», включите «Мониторинг ввода» и «Универсальный доступ». Fotur продолжит проверять права в фоне.");
+            _permissionTimer ??= new Timer(_ => CheckPermissionsAndStart(request: false), null,
+                TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(2));
             return;
         }
         _source = MacNative.CFMachPortCreateRunLoopSource(0, _tap, 0);
@@ -49,6 +81,7 @@ public sealed class MacKeyboardService : IKeyboardService
         MacNative.CFRunLoopAddSource(MacNative.CFRunLoopGetMain(), _source, commonModes);
         MacNative.CFRelease(commonModes);
         MacNative.CGEventTapEnable(_tap, true);
+        StatusChanged?.Invoke(this, "Разрешения macOS получены, глобальные горячие клавиши активны");
     }
 
     public void RefreshSettings() { _scorer = new(_settings.CustomDictionary); RefreshHotkeys(); }
@@ -82,7 +115,7 @@ public sealed class MacKeyboardService : IKeyboardService
         if (type != MacNative.KeyDown || !_settings.AutoCorrectionEnabled) return e;
         if (key == 49) { Evaluate(); _word.Clear(); return e; }
         if (key is 36 or 48) { Evaluate(); _word.Clear(); _recent.Clear(); return e; }
-        if (key == 51) { if (_word.Length > 0) _word.Length--; return e; }
+        if (key == 51) { if (_word.Length > 0) _word.Length--; else _recent.Clear(); return e; }
         var chars = new char[4]; MacNative.CGEventKeyboardGetUnicodeString(e, 4, out var length, chars);
         if (length > 0 && (char.IsLetter(chars[0]) || LayoutConverter.IsConvertible(chars[0]))) _word.Append(chars[0]);
         else if (length > 0) { Evaluate(); _word.Clear(); _recent.Clear(); }
@@ -98,7 +131,7 @@ public sealed class MacKeyboardService : IKeyboardService
         if (!decision.ShouldCorrect) { _recent.Add(current); if (_recent.Count > 23) _recent.RemoveAt(0); return; }
         if (!_injection.ReplacePrevious(decision.Original, decision.Replacement, decision.Language))
         {
-            StatusChanged?.Invoke(this, PostAccessMessage);
+            StatusChanged?.Invoke(this, PermissionMessage(true, false));
             _recent.Clear();
             return;
         }
@@ -112,7 +145,7 @@ public sealed class MacKeyboardService : IKeyboardService
         if (_lastCorrection is null || DateTime.UtcNow - _lastCorrectionUtc > TimeSpan.FromSeconds(8)) return false;
         if (!_injection.ReplacePrevious(_lastCorrection.Replacement, _lastCorrection.Original, TextLanguage.Unknown))
         {
-            StatusChanged?.Invoke(this, PostAccessMessage);
+            StatusChanged?.Invoke(this, PermissionMessage(true, false));
             return false;
         }
         _lastCorrection = null;
@@ -154,10 +187,18 @@ public sealed class MacKeyboardService : IKeyboardService
         16 => "Y", 6 => "Z", _ => $"VK{key:X2}"
     };
 
-    private const string PostAccessMessage = "macOS не разрешает заменять и вставлять текст. Включите Fotur Typing Helper: Настройки системы → Конфиденциальность и безопасность → Универсальный доступ, затем полностью перезапустите приложение.";
+    private static string PermissionMessage(bool inputMonitoring, bool accessibility)
+    {
+        var missing = new List<string>();
+        if (!inputMonitoring) missing.Add("Мониторинг ввода");
+        if (!accessibility) missing.Add("Универсальный доступ");
+        return "macOS ждёт разрешения: " + string.Join(", ", missing) +
+               ". Откройте Настройки → Конфиденциальность и безопасность или кнопки в разделе «Настройки». Fotur останется открытым и включится сам после выдачи прав.";
+    }
 
     public void Dispose()
     {
+        _permissionTimer?.Dispose();
         if (_tap != 0) { MacNative.CGEventTapEnable(_tap, false); MacNative.CFRelease(_tap); }
         if (_source != 0) MacNative.CFRelease(_source);
         _tap = _source = 0;

@@ -101,6 +101,7 @@ public sealed class KeyboardHookService : IKeyboardService
         if (vk == NativeMethods.VkBack)
         {
             if (_word.Length > 0) _word.Length--;
+            else _recentWords.Clear();
         }
         else if (vk == NativeMethods.VkSpace)
         {

@@ -67,6 +67,7 @@ public sealed class ScreenEdgeOverlay : IDisposable
             Opacity = 0.78
         };
         window.Show();
+        MacWindowInterop.MakeClickThrough(window);
         _windows.Add(window);
     }
 

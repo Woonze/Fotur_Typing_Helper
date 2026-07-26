@@ -15,6 +15,7 @@ public sealed class TextInjectionService : ITextInjectionService
 
     public void ReplacePreviousCharacters(int charactersToDelete, string replacement, TextLanguage language, IntPtr targetWindow)
     {
+        using var modifiers = TemporarilyReleaseModifiers();
         SendBackspaces(charactersToDelete);
         SendText(replacement);
         if (language != TextLanguage.Unknown) SwitchLayout(language, targetWindow);
@@ -67,5 +68,29 @@ public sealed class TextInjectionService : ITextInjectionService
             DiagnosticLog.Write("TextInjection", new InvalidOperationException(
                 $"Windows приняла только {sent} из {inputs.Count} событий ввода."));
         return sent == inputs.Count;
+    }
+
+    private static ModifierScope TemporarilyReleaseModifiers()
+    {
+        var pressed = new[]
+            {
+                NativeMethods.VkLControl, NativeMethods.VkRControl,
+                NativeMethods.VkLMenu, NativeMethods.VkRMenu,
+                NativeMethods.VkLShift, NativeMethods.VkRShift
+            }
+            .Where(vk => (NativeMethods.GetAsyncKeyState(vk) & 0x8000) != 0)
+            .ToArray();
+        if (pressed.Length == 0) return new ModifierScope([]);
+        Send(pressed.Select(vk => Key((ushort)vk, NativeMethods.KeyeventfKeyup)).ToArray());
+        return new ModifierScope(pressed);
+    }
+
+    private sealed class ModifierScope(int[] pressed) : IDisposable
+    {
+        public void Dispose()
+        {
+            if (pressed.Length == 0) return;
+            Send(pressed.Select(vk => Key((ushort)vk, 0)).ToArray());
+        }
     }
 }

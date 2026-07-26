@@ -7,9 +7,9 @@ body:
   - type: markdown
     attributes:
       value: |
-        Спасибо за идею.
+        Спасибо за идею!
 
-        Опишите не только желаемую реализацию, но и проблему, которую функция должна решить.
+        Опишите не только предлагаемую функцию, но и проблему, которую она должна решить.
 
   - type: textarea
     id: problem
@@ -50,11 +50,23 @@ body:
     id: usage-example
     attributes:
       label: Пример использования
+      description: Опишите ситуацию, в которой эта функция будет полезна.
+      placeholder: |
+        1. Пользователь нажимает...
+        2. Приложение...
+        3. В результате...
 
   - type: textarea
     id: alternatives
     attributes:
       label: Возможные альтернативы
+      description: Расскажите о других вариантах решения проблемы.
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Дополнительная информация
+      description: Добавьте макеты, скриншоты, ссылки или другие пояснения.
 
   - type: checkboxes
     id: confirmations

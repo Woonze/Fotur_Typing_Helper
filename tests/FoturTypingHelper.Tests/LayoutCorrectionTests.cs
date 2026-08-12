@@ -67,6 +67,20 @@ public sealed class LayoutCorrectionTests
         Assert.False(new LanguageScorer().Evaluate(source, 0.60).ShouldCorrect);
     }
 
+    [Theory]
+    [InlineData("docker compose up --build")]
+    [InlineData("git checkout feature/login")]
+    [InlineData("npm run build:production")]
+    [InlineData("kubectl get pods -n default")]
+    [InlineData("myService.GetUserAsync")]
+    [InlineData("IUserRepository")]
+    [InlineData("src/FoturTypingHelper.Core/LanguageScorer.cs")]
+    [InlineData("DATABASE_URL=postgres://localhost")]
+    public void Scorer_KeepsCodeCommandsPathsAndIdentifiers(string source)
+    {
+        Assert.False(new LanguageScorer().Evaluate(source, 0.56).ShouldCorrect);
+    }
+
     [Fact]
     public void Scorer_RepairsMixedPhraseAfterDelayedLayoutSwitch()
     {

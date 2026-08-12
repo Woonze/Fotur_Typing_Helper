@@ -68,31 +68,68 @@ public sealed class LanguageScorer
         var hasCyrillic = word.Any(IsCyrillic);
         var hasLatin = word.Any(c => c is >= 'A' and <= 'Z' or >= 'a' and <= 'z');
         if (!hasCyrillic && !hasLatin) return new(false, word, word, TextLanguage.Unknown, 0);
-        if (hasCyrillic && hasLatin)
+        var originalScore = ScoreDetectedTokens(word);
+        var candidates = new List<string> { BuildSelectiveCandidate(word) };
+
+        // A whole-phrase conversion remains useful for natural prose, but it is unsafe if
+        // the phrase includes a command, identifier or other deliberately-English token.
+        if (!HasProtectedToken(word))
         {
-            var englishCandidate = LayoutConverter.ToEnglish(word);
-            var russianCandidate = LayoutConverter.ToRussian(word);
-            var mixedOriginalScore = ScoreDetectedTokens(word);
-            var englishScore = Score(englishCandidate, TextLanguage.English);
-            var russianScore = Score(russianCandidate, TextLanguage.Russian);
-            var bestScore = Math.Max(englishScore, russianScore);
-            var mixedConfidence = Sigmoid(bestScore - mixedOriginalScore);
-            if (mixedConfidence < threshold) return new(false, word, word, TextLanguage.Unknown, mixedConfidence);
-            return englishScore >= russianScore
-                ? new(true, word, englishCandidate, TextLanguage.English, mixedConfidence)
-                : new(true, word, russianCandidate, TextLanguage.Russian, mixedConfidence);
+            candidates.Add(hasCyrillic ? LayoutConverter.ToEnglish(word) : LayoutConverter.ToRussian(word));
+            if (hasCyrillic && hasLatin)
+            {
+                candidates.Add(LayoutConverter.ToEnglish(word));
+                candidates.Add(LayoutConverter.ToRussian(word));
+            }
         }
 
-        var candidate = hasLatin ? LayoutConverter.ToRussian(word) : LayoutConverter.ToEnglish(word);
-        var originalLanguage = hasLatin ? TextLanguage.English : TextLanguage.Russian;
-        var candidateLanguage = hasLatin ? TextLanguage.Russian : TextLanguage.English;
-        var originalScore = Score(word, originalLanguage);
-        var candidateScore = Score(candidate, candidateLanguage);
-        var confidence = Sigmoid(candidateScore - originalScore);
+        var candidate = candidates
+            .Where(value => !string.Equals(value, word, StringComparison.Ordinal))
+            .Distinct(StringComparer.Ordinal)
+            .Select(value => new { Value = value, Score = ScoreDetectedTokens(value) })
+            .OrderByDescending(value => value.Score)
+            .FirstOrDefault();
+        if (candidate is null)
+            return new(false, word, word, DetectLastLanguage(word), 0);
 
+        var confidence = Sigmoid(candidate.Score - originalScore);
+        var language = DetectLastLanguage(candidate.Value);
         return confidence >= threshold
-            ? new(true, word, candidate, candidateLanguage, confidence)
-            : new(false, word, word, originalLanguage, confidence);
+            ? new(true, word, candidate.Value, language, confidence)
+            : new(false, word, word, DetectLastLanguage(word), confidence);
+    }
+
+    private string BuildSelectiveCandidate(string phrase)
+    {
+        var result = new System.Text.StringBuilder(phrase.Length);
+        var start = 0;
+        while (start < phrase.Length)
+        {
+            var whitespace = char.IsWhiteSpace(phrase[start]);
+            var end = start + 1;
+            while (end < phrase.Length && char.IsWhiteSpace(phrase[end]) == whitespace) end++;
+            var part = phrase[start..end];
+            result.Append(whitespace ? part : ConvertTokenWhenProven(part));
+            start = end;
+        }
+        return result.ToString();
+    }
+
+    private string ConvertTokenWhenProven(string token)
+    {
+        var core = token.Trim(',', '.', '!', '?', ':', ';', '"', '\'', '(', ')', '[', ']', '{', '}');
+        if (core.Length < 2 || IsProtectedToken(core)) return token;
+        var hasCyrillic = core.Any(IsCyrillic);
+        var hasLatin = core.Any(c => c is >= 'A' and <= 'Z' or >= 'a' and <= 'z');
+        if (hasCyrillic == hasLatin) return token;
+
+        var nativeLanguage = hasLatin ? TextLanguage.English : TextLanguage.Russian;
+        var convertedLanguage = hasLatin ? TextLanguage.Russian : TextLanguage.English;
+        var convertedCore = hasLatin ? LayoutConverter.ToRussian(core) : LayoutConverter.ToEnglish(core);
+        // One accidental-looking pattern is not sufficient evidence. This margin protects
+        // unfamiliar class names, domain terms and short code identifiers.
+        if (Score(convertedCore, convertedLanguage) < Score(core, nativeLanguage) + 1.35) return token;
+        return token.Replace(core, convertedCore, StringComparison.Ordinal);
     }
 
     private double Score(string word, TextLanguage language)
@@ -129,20 +166,44 @@ public sealed class LanguageScorer
             ? Score(token, TextLanguage.Russian)
             : Score(token, TextLanguage.English));
 
+    private static TextLanguage DetectLastLanguage(string phrase)
+    {
+        for (var i = phrase.Length - 1; i >= 0; i--)
+        {
+            if (IsCyrillic(phrase[i])) return TextLanguage.Russian;
+            if (phrase[i] is >= 'A' and <= 'Z' or >= 'a' and <= 'z') return TextLanguage.English;
+        }
+        return TextLanguage.Unknown;
+    }
+
     private static bool AllTokensAreProtected(string phrase)
     {
         var tokens = phrase.Split([' ', '\t', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
             .Select(token => token.Trim(',', '.', '!', '?', ':', ';', '"', '\'', '(', ')', '[', ']', '{', '}'))
             .Where(token => token.Length > 0)
             .ToArray();
-        return tokens.Length > 0 && tokens.All(token =>
-            TechnicalSafeTokens.Contains(token) ||
-            token.Contains('.') ||
-            token.Contains('/') ||
-            token.Contains('\\') ||
-            token.Contains('_') ||
-            token.Contains('-') && token.Any(char.IsLetter));
+        if (IsCommandPhrase(tokens)) return true;
+        return tokens.Length > 0 && tokens.All(IsProtectedToken);
     }
+
+    private static bool HasProtectedToken(string phrase) => phrase
+        .Split([' ', '\t', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
+        .Select(token => token.Trim(',', '.', '!', '?', ':', ';', '"', '\'', '(', ')', '[', ']', '{', '}'))
+        .Any(IsProtectedToken);
+
+    private static bool IsProtectedToken(string token)
+    {
+        if (TechnicalSafeTokens.Contains(token) || token.StartsWith("--", StringComparison.Ordinal)) return true;
+        if (token.Contains('.') || token.Contains('/') || token.Contains('\\') || token.Contains('_') || token.Contains('@') ||
+            token.Contains('$') || token.Contains('#') || token.Contains('=') || token.Contains(':')) return true;
+        if (token.Contains('-') && token.Any(char.IsLetter)) return true;
+        // camelCase/PascalCase identifiers are overwhelmingly code or product names.
+        return token.Length >= 3 && token.Any(char.IsLower) && token.Any(char.IsUpper);
+    }
+
+    private static bool IsCommandPhrase(IReadOnlyList<string> tokens) =>
+        tokens.Count > 0 && TechnicalSafeTokens.Contains(tokens[0]) &&
+        (tokens.Count > 1 || tokens[0] is "docker" or "git" or "npm" or "kubectl" or "dotnet");
 
     private static bool IsCyrillic(char c) => c is >= 'А' and <= 'я' or 'Ё' or 'ё';
     private static double Sigmoid(double value) => 1d / (1d + Math.Exp(-value));

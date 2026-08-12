@@ -101,7 +101,14 @@ public sealed class KeyboardHookService : IKeyboardService
         if (vk == NativeMethods.VkBack)
         {
             if (_word.Length > 0) _word.Length--;
-            else _recentWords.Clear();
+            // Editing invalidates phrase context: the caret may no longer be after the
+            // words we remembered, so never replace an older phrase by accident.
+            _recentWords.Clear();
+        }
+        else if (vk is 0x2E or 0x24 or 0x23 or 0x21 or 0x22 or 0x25 or 0x26 or 0x27 or 0x28 or NativeMethods.VkEscape)
+        {
+            _word.Clear();
+            _recentWords.Clear();
         }
         else if (vk == NativeMethods.VkSpace)
         {

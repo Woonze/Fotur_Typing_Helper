@@ -22,6 +22,7 @@ public sealed class LinuxKeyboardService : IKeyboardService
     private CorrectionApplied? _lastCorrection;
     private DateTime _lastCorrectionUtc;
     private DateTime _ignoreEventsUntilUtc;
+    private long _inputRevision;
     private bool _dictationGestureActive;
     private bool _dictationKeyCaptured;
     private LinuxRawKeyEventKind? _pendingKind;
@@ -124,6 +125,7 @@ public sealed class LinuxKeyboardService : IKeyboardService
         if (_mapper is null || DateTime.UtcNow < _ignoreEventsUntilUtc) return;
         var snapshot = _mapper.ReadKey(keycode);
         if (snapshot is null) return;
+        if (down) Interlocked.Increment(ref _inputRevision);
 
         if (down && MatchesHotkey(snapshot.KeyName, snapshot.Modifiers, _dictationHotkey))
         {
@@ -152,7 +154,13 @@ public sealed class LinuxKeyboardService : IKeyboardService
             if (snapshot.KeyName == "Backspace")
             {
                 if (_word.Length > 0) _word.Length--;
-                else _recentWords.Clear();
+                _recentWords.Clear();
+                return;
+            }
+            if (snapshot.KeyName is "Delete" or "Escape" or "Home" or "End" or "PageUp" or "PageDown" or "Left" or "Up" or "Right" or "Down")
+            {
+                _word.Clear();
+                _recentWords.Clear();
                 return;
             }
             if (snapshot.KeyName == "Space")
@@ -189,6 +197,7 @@ public sealed class LinuxKeyboardService : IKeyboardService
         string current;
         string phrase;
         bool hasRecentWords;
+        long revision;
         lock (_gate)
         {
             if (_word.Length < 2) return;
@@ -196,11 +205,14 @@ public sealed class LinuxKeyboardService : IKeyboardService
             hasRecentWords = _recentWords.Count > 0;
             phrase = _recentWords.Count > 0 ? string.Join(' ', _recentWords.Append(current)) : current;
             _word.Clear();
+            revision = Volatile.Read(ref _inputRevision);
         }
 
         // XInput2 raw events are notifications, not suppressible hooks. Give the target app a
         // short moment to receive the original delimiter, then replace the visible text in-place.
         await Task.Delay(45);
+        // Do not race a user who continued typing, moved the caret or edited the field.
+        if (revision != Volatile.Read(ref _inputRevision)) return;
 
         var decision = _scorer.Evaluate(current, _settings.CorrectionConfidence);
         if (hasRecentWords)

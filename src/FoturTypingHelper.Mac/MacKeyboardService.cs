@@ -115,7 +115,11 @@ public sealed class MacKeyboardService : IKeyboardService
         if (type != MacNative.KeyDown || !_settings.AutoCorrectionEnabled) return e;
         if (key == 49) { Evaluate(); _word.Clear(); return e; }
         if (key is 36 or 48) { Evaluate(); _word.Clear(); _recent.Clear(); return e; }
-        if (key == 51) { if (_word.Length > 0) _word.Length--; else _recent.Clear(); return e; }
+        if (key == 51) { if (_word.Length > 0) _word.Length--; _recent.Clear(); return e; }
+        // Arrows, Delete, Escape, Home/End and paging move or edit the target cursor.
+        // Discard text history before it can be applied at a different caret position.
+        if (key is 117 or 53 or 115 or 119 or 116 or 121 or 123 or 124 or 125 or 126)
+        { _word.Clear(); _recent.Clear(); return e; }
         var chars = new char[4]; MacNative.CGEventKeyboardGetUnicodeString(e, 4, out var length, chars);
         if (length > 0 && (char.IsLetter(chars[0]) || LayoutConverter.IsConvertible(chars[0]))) _word.Append(chars[0]);
         else if (length > 0) { Evaluate(); _word.Clear(); _recent.Clear(); }

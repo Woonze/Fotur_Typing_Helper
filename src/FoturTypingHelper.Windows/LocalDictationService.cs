@@ -48,12 +48,13 @@ public sealed class LocalDictationService : IDictationService
         return DictationTextPostProcessor.Process(formatted, settings);
     }
 
-    public bool IsModelInstalled(string model) => File.Exists(GetModelPath(model));
+    public bool IsModelInstalled(string model) => IsUsableModel(GetModelPath(model), model);
 
     private async Task<string> EnsureModelAsync(string model, CancellationToken cancellationToken)
     {
         var path = GetModelPath(model);
-        if (File.Exists(path)) return path;
+        if (IsUsableModel(path, model)) return path;
+        if (File.Exists(path)) File.Delete(path);
         var type = model.ToLowerInvariant() switch
         {
             "tiny" => GgmlType.Tiny,
@@ -62,21 +63,41 @@ public sealed class LocalDictationService : IDictationService
             _ => GgmlType.Base
         };
         await using var modelStream = await WhisperGgmlDownloader.Default.GetGgmlModelAsync(type, cancellationToken: cancellationToken);
-        await using var target = File.Create(path);
-        var buffer = new byte[1024 * 128];
-        long copied = 0;
-        int read;
-        while ((read = await modelStream.ReadAsync(buffer, cancellationToken)) > 0)
+        var temporaryPath = path + ".download";
+        try
         {
-            await target.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
-            copied += read;
-            if (modelStream.CanSeek && modelStream.Length > 0)
-                DownloadProgress?.Invoke(this, (double)copied / modelStream.Length);
+            if (File.Exists(temporaryPath)) File.Delete(temporaryPath);
+            await using var target = File.Create(temporaryPath);
+            var buffer = new byte[1024 * 128];
+            long copied = 0;
+            int read;
+            while ((read = await modelStream.ReadAsync(buffer, cancellationToken)) > 0)
+            {
+                await target.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+                copied += read;
+                if (modelStream.CanSeek && modelStream.Length > 0)
+                    DownloadProgress?.Invoke(this, (double)copied / modelStream.Length);
+            }
+            await target.FlushAsync(cancellationToken);
+            File.Move(temporaryPath, path, true);
+        }
+        catch
+        {
+            try { if (File.Exists(temporaryPath)) File.Delete(temporaryPath); } catch { }
+            throw;
         }
         return path;
     }
 
     private string GetModelPath(string model) => Path.Combine(_modelsRoot, $"ggml-{model.ToLowerInvariant()}.bin");
+    private static bool IsUsableModel(string path, string model) => File.Exists(path) && new FileInfo(path).Length >= MinimumModelBytes(model);
+    private static long MinimumModelBytes(string model) => model.ToLowerInvariant() switch
+    {
+        "tiny" => 40L * 1024 * 1024,
+        "small" => 300L * 1024 * 1024,
+        "medium" => 900L * 1024 * 1024,
+        _ => 90L * 1024 * 1024
+    };
 
     private static void ConfigureNativeRuntime()
     {

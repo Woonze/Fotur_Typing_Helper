@@ -1,32 +1,29 @@
-# Fotur Typing Helper 1.3.0
+# Fotur Typing Helper 1.3.1
 
-Обновление инфраструктуры релиза и стабильности: исправлена проверка обновлений, добавлена Linux x64-сборка для X11, а релизные пакеты очищены от чужих platform/runtime-файлов. Документация и шаблоны Issue сохранены подробными, но обновлены под текущую версию.
+Патч качества для автокоррекции и локальной диктовки. Fotur осторожнее работает рядом с кодом и командами, одинаково обрабатывает ручное редактирование на Windows/macOS/Linux и надёжнее восстанавливается после сорванной загрузки модели Whisper.
 
 ## Скачать
 
-- **Windows x64 — установщик:** [скачать EXE](https://github.com/Woonze/Fotur_Typing_Helper/releases/download/v1.3.0/FoturTypingHelper-Setup-1.3.0-win-x64.exe)
-- **Windows x64 — portable:** [скачать ZIP](https://github.com/Woonze/Fotur_Typing_Helper/releases/download/v1.3.0/FoturTypingHelper-1.3.0-win-x64-portable.zip)
-- **macOS Apple Silicon — M1/M2/M3/M4/M5:** [скачать DMG](https://github.com/Woonze/Fotur_Typing_Helper/releases/download/v1.3.0/FoturTypingHelper-1.3.0-macos-arm64.dmg)
-- **macOS Intel:** [скачать DMG](https://github.com/Woonze/Fotur_Typing_Helper/releases/download/v1.3.0/FoturTypingHelper-1.3.0-macos-x64.dmg)
-- **Linux x64 — X11:** [скачать TAR.GZ](https://github.com/Woonze/Fotur_Typing_Helper/releases/download/v1.3.0/FoturTypingHelper-1.3.0-linux-x64.tar.gz)
-- **Инструкция для Mac:** [установка и выдача разрешений](https://github.com/Woonze/Fotur_Typing_Helper/blob/v1.3.0/docs/MACOS_INSTALL.md)
-- **Контрольные суммы:** [Windows](https://github.com/Woonze/Fotur_Typing_Helper/releases/download/v1.3.0/SHA256SUMS.txt), [macOS Apple Silicon](https://github.com/Woonze/Fotur_Typing_Helper/releases/download/v1.3.0/SHA256SUMS-macos-arm64.txt), [macOS Intel](https://github.com/Woonze/Fotur_Typing_Helper/releases/download/v1.3.0/SHA256SUMS-macos-x64.txt), [Linux](https://github.com/Woonze/Fotur_Typing_Helper/releases/download/v1.3.0/SHA256SUMS-linux-x64.txt)
+- **Windows x64 — установщик:** [скачать EXE](https://github.com/Woonze/Fotur_Typing_Helper/releases/download/v1.3.1/FoturTypingHelper-Setup-1.3.1-win-x64.exe)
+- **Windows x64 — portable:** [скачать ZIP](https://github.com/Woonze/Fotur_Typing_Helper/releases/download/v1.3.1/FoturTypingHelper-1.3.1-win-x64-portable.zip)
+- **macOS Apple Silicon — M1/M2/M3/M4/M5:** [скачать DMG](https://github.com/Woonze/Fotur_Typing_Helper/releases/download/v1.3.1/FoturTypingHelper-1.3.1-macos-arm64.dmg)
+- **macOS Intel:** [скачать DMG](https://github.com/Woonze/Fotur_Typing_Helper/releases/download/v1.3.1/FoturTypingHelper-1.3.1-macos-x64.dmg)
+- **Linux x64 — X11:** [скачать TAR.GZ](https://github.com/Woonze/Fotur_Typing_Helper/releases/download/v1.3.1/FoturTypingHelper-1.3.1-linux-x64.tar.gz)
+- **Инструкция для Mac:** [установка и выдача разрешений](https://github.com/Woonze/Fotur_Typing_Helper/blob/v1.3.1/docs/MACOS_INSTALL.md)
+- **Контрольные суммы:** [Windows](https://github.com/Woonze/Fotur_Typing_Helper/releases/download/v1.3.1/SHA256SUMS.txt), [macOS Apple Silicon](https://github.com/Woonze/Fotur_Typing_Helper/releases/download/v1.3.1/SHA256SUMS-macos-arm64.txt), [macOS Intel](https://github.com/Woonze/Fotur_Typing_Helper/releases/download/v1.3.1/SHA256SUMS-macos-x64.txt), [Linux](https://github.com/Woonze/Fotur_Typing_Helper/releases/download/v1.3.1/SHA256SUMS-linux-x64.txt)
 
 ## Что изменилось
 
-- Исправлена проверка обновлений через GitHub Releases. Fotur теперь выбирает asset под текущую платформу, различает Windows/macOS ARM/macOS Intel/Linux, проверяет SHA-256 и показывает понятный статус, если latest release или нужный файл недоступен.
-- Добавлена Linux x64-сборка для X11/XWayland. В пакет входят Avalonia UI, локальная Whisper-диктовка, загрузка моделей, глобальные хоткеи через XInput2/XKB и автокоррекция с заменой текста через `xdotool`.
-- Релизные пакеты очищены от файлов других платформ. Windows portable больше не содержит Linux/macOS platform DLL и чужие native runtimes; Linux tar.gz не содержит Windows/macOS platform DLL; macOS build-процесс оставляет только нужный `macos-arm64` или `macos-x64` runtime плюс CoreML.
-- Пользовательские ZIP/TAR/DMG больше не включают `.pdb`. Отладочные символы публикуются отдельными symbols-артефактами, чтобы основной пакет был меньше и аккуратнее.
-- Windows portable распаковывается в общую папку `FoturTypingHelper-1.3.0-win-x64-portable/`, а не разбрасывает файлы в текущую директорию.
-- Во все дистрибутивы добавлены `LICENSE` и `THIRD_PARTY_NOTICES.md`. Inno Setup показывает MIT-лицензию и устанавливает оба файла рядом с приложением.
-- Версия установщика больше не дублируется вручную: build script читает `Directory.Build.props` и передаёт `/DAppVersion=...` в Inno Setup.
-- Восстановлены повреждённые UTF-8 строки в UI, документах и Issue templates.
-- Дополнительно усилена защита технического английского текста: `docker compose`, `git push`, `npm install`, `json config` и похожие команды не должны ложно переводиться в русскую раскладку.
+- Автокоррекция защищает команды, флаги, пути, URL, переменные окружения, ключевые слова C#/JS/SQL, CLI-инструменты, операторы и идентификаторы (`camelCase`/`PascalCase`). Код вроде `value => value.Trim()`, `kubectl get pods -n default` и `DATABASE_URL=...` не должен менять раскладку.
+- Алгоритм стал асимметрично-консервативным: при сомнении он оставляет редкое слово нетронутым, а не рискует испортить корректный текст.
+- Windows, macOS и Linux сбрасывают сохранённый контекст после Backspace/Delete/Escape и навигации курсором. Linux не обрабатывает собственную замену `xdotool` как новый пользовательский ввод.
+- macOS обрабатывает горячую клавишу так же строго, как Windows и Linux: лишний модификатор не запускает диктовку.
+- Загрузка Whisper-моделей стала атомарной: временный файл не считается готовой моделью, удаляется после ошибки, а повреждённая модель автоматически скачивается заново.
+- Добавлены регрессионные тесты: 90 unit-тестов покрывают обычную речь, неправильную раскладку, смешанные фразы, код, команды и опасные синтаксические конструкции.
 
 ## Важно для macOS
 
-Перетащите приложение из DMG в «Программы» и запускайте именно установленную копию. Для автокоррекции и глобальных хоткеев нужны «Мониторинг ввода» и «Универсальный доступ», для диктовки — «Микрофон». Fotur 1.3.0 остаётся открытым и пере-проверяет права в фоне; если macOS попросит перезапуск после изменения Privacy-настроек, выполните это требование системы.
+Перетащите приложение из DMG в «Программы» и запускайте именно установленную копию. Для автокоррекции и глобальных хоткеев нужны «Мониторинг ввода» и «Универсальный доступ», для диктовки — «Микрофон». Fotur 1.3.1 остаётся открытым и пере-проверяет права в фоне; если macOS попросит перезапуск после изменения Privacy-настроек, выполните это требование системы.
 
 Текущие macOS-пакеты подписаны ad-hoc и пока не нотарифицированы Apple: для первого запуска может потребоваться «Всё равно открыть». Физическую проверку нового DMG на Intel и Apple Silicon продолжаем отдельно; если на конкретном Mac глобальный хоткей или автозамена не сработают, это будет исправляться в следующем обновлении.
 

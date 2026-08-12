@@ -74,11 +74,12 @@ Fotur Typing Helper $version for Linux x64
 Run:
   ./FoturTypingHelper.App
 
-Experimental Linux notes:
+Linux notes:
 - UI and local Whisper dictation are packaged.
 - Audio recording uses arecord, install alsa-utils if recording fails.
-- Text insertion uses xdotool on X11; Wayland blocks synthetic typing for now.
-- Global hotkeys and automatic layout correction are not enabled on Linux 1.3.0.
+- Global hotkeys, text insertion and automatic layout correction use xinput/XKB and xdotool on X11/XWayland.
+- Install xinput and xdotool for these global features.
+- Wayland may block global keyboard access and synthetic typing by compositor policy.
 EOF
 chmod +x "$package_root/FoturTypingHelper.App"
 

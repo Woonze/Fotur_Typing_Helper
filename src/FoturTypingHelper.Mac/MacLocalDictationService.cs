@@ -11,7 +11,7 @@ public sealed class MacLocalDictationService : IDictationService
     public event EventHandler<double>? DownloadProgress;
     public MacLocalDictationService() { Directory.CreateDirectory(_root); RuntimeOptions.RuntimeLibraryOrder = [RuntimeLibrary.CoreML, RuntimeLibrary.Cpu]; }
     public string GetRuntimeInfo() => WhisperFactory.GetRuntimeInfo() ?? "Whisper CoreML/CPU runtime loaded";
-    public bool IsModelInstalled(string model) => File.Exists(Path.Combine(_root, $"ggml-{model}.bin"));
+    public bool IsModelInstalled(string model) => IsUsableModel(Path.Combine(_root, $"ggml-{model}.bin"), model);
 
     public async Task<string> TranscribeAsync(string audioPath, AppSettings settings, CancellationToken cancellationToken = default)
     {
@@ -29,11 +29,39 @@ public sealed class MacLocalDictationService : IDictationService
 
     private async Task<string> EnsureModel(string model, CancellationToken token)
     {
-        var path = Path.Combine(_root, $"ggml-{model}.bin"); if (File.Exists(path)) return path;
+        var path = Path.Combine(_root, $"ggml-{model}.bin"); if (IsUsableModel(path, model)) return path;
+        if (File.Exists(path)) File.Delete(path);
         var type = model switch { "tiny" => GgmlType.Tiny, "small" => GgmlType.Small, "medium" => GgmlType.Medium, _ => GgmlType.Base };
-        await using var source = await WhisperGgmlDownloader.Default.GetGgmlModelAsync(type, cancellationToken: token); await using var target = File.Create(path);
-        var buffer = new byte[131072]; long copied = 0; int read;
-        while ((read = await source.ReadAsync(buffer, token)) > 0) { await target.WriteAsync(buffer.AsMemory(0, read), token); copied += read; if (source.CanSeek) DownloadProgress?.Invoke(this, (double)copied / source.Length); }
+        await using var source = await WhisperGgmlDownloader.Default.GetGgmlModelAsync(type, cancellationToken: token);
+        var temporaryPath = path + ".download";
+        try
+        {
+            if (File.Exists(temporaryPath)) File.Delete(temporaryPath);
+            await using var target = File.Create(temporaryPath);
+            var buffer = new byte[131072]; long copied = 0; int read;
+            while ((read = await source.ReadAsync(buffer, token)) > 0)
+            {
+                await target.WriteAsync(buffer.AsMemory(0, read), token);
+                copied += read;
+                if (source.CanSeek && source.Length > 0) DownloadProgress?.Invoke(this, (double)copied / source.Length);
+            }
+            await target.FlushAsync(token);
+            File.Move(temporaryPath, path, true);
+        }
+        catch
+        {
+            try { if (File.Exists(temporaryPath)) File.Delete(temporaryPath); } catch { }
+            throw;
+        }
         return path;
     }
+
+    private static bool IsUsableModel(string path, string model) => File.Exists(path) && new FileInfo(path).Length >= MinimumModelBytes(model);
+    private static long MinimumModelBytes(string model) => model.ToLowerInvariant() switch
+    {
+        "tiny" => 40L * 1024 * 1024,
+        "small" => 300L * 1024 * 1024,
+        "medium" => 900L * 1024 * 1024,
+        _ => 90L * 1024 * 1024
+    };
 }

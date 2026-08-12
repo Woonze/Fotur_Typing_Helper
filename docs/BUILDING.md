@@ -1,4 +1,4 @@
-# Сборка и проверка 1.3.0
+# Сборка и проверка 1.3.1
 
 ## Windows x64
 
@@ -12,16 +12,16 @@ dotnet test FoturTypingHelper.sln -c Release
 
 Результаты:
 
-- `artifacts/installer/FoturTypingHelper-Setup-1.3.0-win-x64.exe`
-- `artifacts/FoturTypingHelper-1.3.0-win-x64-portable.zip`
+- `artifacts/installer/FoturTypingHelper-Setup-1.3.1-win-x64.exe`
+- `artifacts/FoturTypingHelper-1.3.1-win-x64-portable.zip`
 
 После публикации стабильного релиза endpoint автообновления и полный набор платформенных файлов проверяются командой:
 
 ```powershell
-.\scripts\verify-release-feed.ps1 -ExpectedVersion 1.3.0
+.\scripts\verify-release-feed.ps1 -ExpectedVersion 1.3.1
 ```
 
-До публикации 1.3.0 скрипт ожидаемо показывает предыдущий стабильный релиз; prerelease и draft встроенный updater не видит.
+До публикации 1.3.1 скрипт ожидаемо показывает предыдущий стабильный релиз; prerelease и draft встроенный updater не видит.
 - `artifacts/SHA256SUMS.txt`
 
 Реальный браузерный стенд:
@@ -66,8 +66,8 @@ scripts/build-linux.sh linux-x64
 
 Результат:
 
-- `artifacts/FoturTypingHelper-1.3.0-linux-x64.tar.gz`
-- `artifacts/FoturTypingHelper-1.3.0-linux-x64-symbols.tar.gz`
+- `artifacts/FoturTypingHelper-1.3.1-linux-x64.tar.gz`
+- `artifacts/FoturTypingHelper-1.3.1-linux-x64-symbols.tar.gz`
 - `artifacts/SHA256SUMS-linux-x64.txt`
 
 Скрипт запускает тесты, публикует self-contained `linux-x64`, оставляет только runtime целевой платформы, выносит `.pdb` в symbols-архив и добавляет `LICENSE`/`THIRD_PARTY_NOTICES.md`.

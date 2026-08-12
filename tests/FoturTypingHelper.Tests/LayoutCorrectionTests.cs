@@ -76,7 +76,66 @@ public sealed class LayoutCorrectionTests
     [InlineData("IUserRepository")]
     [InlineData("src/FoturTypingHelper.Core/LanguageScorer.cs")]
     [InlineData("DATABASE_URL=postgres://localhost")]
+    [InlineData("value => value.Trim()")]
+    [InlineData("user?.Profile?.Name")]
+    [InlineData("result ?? fallback")]
+    [InlineData("items.Count >= limit")]
+    [InlineData("Map<string, List<int>>")]
     public void Scorer_KeepsCodeCommandsPathsAndIdentifiers(string source)
+    {
+        Assert.False(new LanguageScorer().Evaluate(source, 0.56).ShouldCorrect);
+    }
+
+    [Theory]
+    [InlineData("class")]
+    [InlineData("public")]
+    [InlineData("private")]
+    [InlineData("protected")]
+    [InlineData("namespace")]
+    [InlineData("using")]
+    [InlineData("async")]
+    [InlineData("await")]
+    [InlineData("return")]
+    [InlineData("string")]
+    [InlineData("boolean")]
+    [InlineData("function")]
+    [InlineData("const")]
+    [InlineData("import")]
+    [InlineData("export")]
+    [InlineData("SELECT")]
+    [InlineData("INSERT")]
+    [InlineData("CREATE")]
+    [InlineData("main")]
+    [InlineData("master")]
+    [InlineData("origin")]
+    [InlineData("develop")]
+    [InlineData("feature")]
+    [InlineData("production")]
+    [InlineData("abstract")]
+    [InlineData("foreach")]
+    [InlineData("implements")]
+    [InlineData("readonly")]
+    [InlineData("undefined")]
+    [InlineData("terraform")]
+    [InlineData("python3")]
+    [InlineData("powershell")]
+    [InlineData("curl")]
+    [InlineData("systemctl")]
+    public void Scorer_NeverRewritesCommonCodeVocabulary(string source)
+    {
+        Assert.False(new LanguageScorer().Evaluate(source).ShouldCorrect);
+    }
+
+    [Theory]
+    [InlineData("dotnet test --configuration Release")]
+    [InlineData("python3 -m pytest tests/unit")]
+    [InlineData("terraform plan -out=tfplan")]
+    [InlineData("curl -H Authorization https://api.example.com")]
+    [InlineData("SELECT id, name FROM users WHERE active = true")]
+    [InlineData("git rebase origin/main")]
+    [InlineData("gh pr create --title feature/login")]
+    [InlineData("docker run --rm -p 8080:80 nginx")]
+    public void Scorer_NeverRewritesWholeDeveloperCommand(string source)
     {
         Assert.False(new LanguageScorer().Evaluate(source, 0.56).ShouldCorrect);
     }

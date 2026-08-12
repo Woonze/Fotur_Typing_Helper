@@ -164,7 +164,7 @@ public sealed class MacKeyboardService : IKeyboardService
 
     private static bool MatchesHotkey(ushort key, ulong flags, HotkeyGesture gesture) =>
         string.Equals(KeyName(key), gesture.Key, StringComparison.OrdinalIgnoreCase) &&
-        (Modifiers(flags) & gesture.Modifiers) == gesture.Modifiers;
+        Modifiers(flags) == gesture.Modifiers;
 
     private static bool HasRequiredModifiers(ulong flags, HotkeyModifiers required) =>
         (Modifiers(flags) & required) == required;

@@ -46,6 +46,21 @@ public sealed class LanguageScorer
         "up","down","restart","logs","exec","install","update","upgrade","remove","run","start","stop"
     };
 
+    // These are intentionally protected even when they happen to resemble an ordinary
+    // English word after a layout conversion. A false positive in source code is much
+    // more expensive than leaving one unusual natural-language word unchanged.
+    private static readonly HashSet<string> ProgrammingKeywords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "abstract","as","async","await","base","break","case","catch","checked","class","const","continue","default","delegate","do","else","enum","event","explicit","extern","finally","fixed","for","foreach","goto","if","implicit","in","interface","internal","is","lock","namespace","new","operator","out","override","params","private","protected","public","readonly","ref","return","sealed","sizeof","stackalloc","static","struct","switch","this","throw","try","typeof","unchecked","unsafe","using","virtual","void","volatile","while","yield",
+        "boolean","byte","char","double","float","int","long","number","object","short","string","var","decimal","dynamic","null","true","false","undefined","function","let","import","export","from","extends","implements","package","module","require","default","finally","instanceof","keyof","never","unknown","readonly","type","declare","satisfies",
+        "select","insert","update","delete","create","alter","drop","table","database","index","join","left","right","inner","outer","where","group","order","having","limit","values","into","primary","foreign","key","begin","commit","rollback"
+    };
+
+    private static readonly HashSet<string> CommandExecutables = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "git","gh","docker","kubectl","helm","terraform","tofu","ansible","npm","pnpm","yarn","bun","npx","node","deno","dotnet","msbuild","nuget","powershell","pwsh","bash","zsh","sh","cmd","make","cmake","gradle","mvn","java","python","python3","pip","pip3","poetry","uv","cargo","rustc","go","code","adb","ssh","scp","curl","wget","rsync","grep","rg","sed","awk","jq","yq","chmod","chown","systemctl","journalctl","ps","kill"
+    };
+
     private static readonly string[] RussianPatterns =
         ["ст", "но", "то", "на", "ен", "ов", "ни", "ра", "ко", "пр", "ть", "ый", "ая", "ие", "что", "это",
          "ме", "ня", "те", "еб", "бя", "зо", "ву", "ут", "по", "ро", "го", "де", "ла", "ли", "ва", "ре",
@@ -118,7 +133,7 @@ public sealed class LanguageScorer
     private string ConvertTokenWhenProven(string token)
     {
         var core = token.Trim(',', '.', '!', '?', ':', ';', '"', '\'', '(', ')', '[', ']', '{', '}');
-        if (core.Length < 2 || IsProtectedToken(core)) return token;
+        if (core.Length < 2 || IsProtectedToken(token) || IsProtectedToken(core)) return token;
         var hasCyrillic = core.Any(IsCyrillic);
         var hasLatin = core.Any(c => c is >= 'A' and <= 'Z' or >= 'a' and <= 'z');
         if (hasCyrillic == hasLatin) return token;
@@ -193,17 +208,29 @@ public sealed class LanguageScorer
 
     private static bool IsProtectedToken(string token)
     {
-        if (TechnicalSafeTokens.Contains(token) || token.StartsWith("--", StringComparison.Ordinal)) return true;
+        if (TechnicalSafeTokens.Contains(token) || ProgrammingKeywords.Contains(token) || CommandExecutables.Contains(token) ||
+            token.StartsWith("--", StringComparison.Ordinal)) return true;
         if (token.Contains('.') || token.Contains('/') || token.Contains('\\') || token.Contains('_') || token.Contains('@') ||
             token.Contains('$') || token.Contains('#') || token.Contains('=') || token.Contains(':')) return true;
+        if (LooksLikeCodeSyntax(token)) return true;
         if (token.Contains('-') && token.Any(char.IsLetter)) return true;
         // camelCase/PascalCase identifiers are overwhelmingly code or product names.
         return token.Length >= 3 && token.Any(char.IsLower) && token.Any(char.IsUpper);
     }
 
+    private static bool LooksLikeCodeSyntax(string token) =>
+        token.Contains("=>", StringComparison.Ordinal) || token.Contains("::", StringComparison.Ordinal) ||
+        token.Contains("?.", StringComparison.Ordinal) || token.Contains("??", StringComparison.Ordinal) ||
+        token.Contains("==", StringComparison.Ordinal) || token.Contains("!=", StringComparison.Ordinal) ||
+        token.Contains("<=", StringComparison.Ordinal) || token.Contains(">=", StringComparison.Ordinal) ||
+        token.Contains("&&", StringComparison.Ordinal) || token.Contains("||", StringComparison.Ordinal) ||
+        token.Contains("+=", StringComparison.Ordinal) || token.Contains("-=", StringComparison.Ordinal) ||
+        token.Contains("*=", StringComparison.Ordinal) || token.Contains("/=", StringComparison.Ordinal) ||
+        token.Contains("()", StringComparison.Ordinal) || token.Contains('{') || token.Contains('}') ||
+        (token.Length > 2 && token[0] == '<' && token[^1] == '>');
+
     private static bool IsCommandPhrase(IReadOnlyList<string> tokens) =>
-        tokens.Count > 0 && TechnicalSafeTokens.Contains(tokens[0]) &&
-        (tokens.Count > 1 || tokens[0] is "docker" or "git" or "npm" or "kubectl" or "dotnet");
+        tokens.Count > 0 && CommandExecutables.Contains(tokens[0]) && tokens.Count > 1;
 
     private static bool IsCyrillic(char c) => c is >= 'А' and <= 'я' or 'Ё' or 'ё';
     private static double Sigmoid(double value) => 1d / (1d + Math.Exp(-value));

@@ -228,9 +228,11 @@ public sealed class LinuxKeyboardService : IKeyboardService
 
         var replacement = decision.Replacement + delimiter;
         var charactersToDelete = decision.Original.Length + delimiter.Length;
+        // xdotool produces normal XInput events. Start filtering before injection so that
+        // our own replacement can never become a new phrase in the keyboard buffer.
+        _ignoreEventsUntilUtc = DateTime.UtcNow.AddMilliseconds(700);
         if (_injection.ReplacePreviousCharacters(charactersToDelete, replacement))
         {
-            _ignoreEventsUntilUtc = DateTime.UtcNow.AddMilliseconds(700);
             _lastCorrection = new(decision.Original, decision.Replacement, decision.Confidence);
             _lastCorrectionUtc = DateTime.UtcNow;
             lock (_gate) _recentWords.Clear();
@@ -253,10 +255,10 @@ public sealed class LinuxKeyboardService : IKeyboardService
     private bool TryUndo()
     {
         if (_lastCorrection is null || DateTime.UtcNow - _lastCorrectionUtc > TimeSpan.FromSeconds(8)) return false;
+        _ignoreEventsUntilUtc = DateTime.UtcNow.AddMilliseconds(700);
         var ok = _injection.ReplacePreviousCharacters(_lastCorrection.Replacement.Length, _lastCorrection.Original);
         if (ok)
         {
-            _ignoreEventsUntilUtc = DateTime.UtcNow.AddMilliseconds(700);
             _lastCorrection = null;
         }
         return ok;
@@ -495,7 +497,7 @@ public sealed class LinuxLocalDictationService : IDictationService
 
     public LinuxLocalDictationService() => Directory.CreateDirectory(_root);
     public string GetRuntimeInfo() => WhisperFactory.GetRuntimeInfo() ?? "Whisper CPU runtime loaded";
-    public bool IsModelInstalled(string model) => File.Exists(GetModelPath(model));
+    public bool IsModelInstalled(string model) => IsUsableModel(GetModelPath(model), model);
 
     public async Task<string> TranscribeAsync(string audioPath, AppSettings settings, CancellationToken cancellationToken = default)
     {
@@ -525,7 +527,8 @@ public sealed class LinuxLocalDictationService : IDictationService
     private async Task<string> EnsureModelAsync(string model, CancellationToken cancellationToken)
     {
         var path = GetModelPath(model);
-        if (File.Exists(path)) return path;
+        if (IsUsableModel(path, model)) return path;
+        if (File.Exists(path)) File.Delete(path);
         var type = model.ToLowerInvariant() switch
         {
             "tiny" => GgmlType.Tiny,
@@ -534,21 +537,41 @@ public sealed class LinuxLocalDictationService : IDictationService
             _ => GgmlType.Base
         };
         await using var modelStream = await WhisperGgmlDownloader.Default.GetGgmlModelAsync(type, cancellationToken: cancellationToken);
-        await using var target = File.Create(path);
-        var buffer = new byte[1024 * 128];
-        long copied = 0;
-        int read;
-        while ((read = await modelStream.ReadAsync(buffer, cancellationToken)) > 0)
+        var temporaryPath = path + ".download";
+        try
         {
-            await target.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
-            copied += read;
-            if (modelStream.CanSeek && modelStream.Length > 0)
-                DownloadProgress?.Invoke(this, (double)copied / modelStream.Length);
+            if (File.Exists(temporaryPath)) File.Delete(temporaryPath);
+            await using var target = File.Create(temporaryPath);
+            var buffer = new byte[1024 * 128];
+            long copied = 0;
+            int read;
+            while ((read = await modelStream.ReadAsync(buffer, cancellationToken)) > 0)
+            {
+                await target.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+                copied += read;
+                if (modelStream.CanSeek && modelStream.Length > 0)
+                    DownloadProgress?.Invoke(this, (double)copied / modelStream.Length);
+            }
+            await target.FlushAsync(cancellationToken);
+            File.Move(temporaryPath, path, true);
+        }
+        catch
+        {
+            try { if (File.Exists(temporaryPath)) File.Delete(temporaryPath); } catch { }
+            throw;
         }
         return path;
     }
 
     private string GetModelPath(string model) => Path.Combine(_root, $"ggml-{model.ToLowerInvariant()}.bin");
+    private static bool IsUsableModel(string path, string model) => File.Exists(path) && new FileInfo(path).Length >= MinimumModelBytes(model);
+    private static long MinimumModelBytes(string model) => model.ToLowerInvariant() switch
+    {
+        "tiny" => 40L * 1024 * 1024,
+        "small" => 300L * 1024 * 1024,
+        "medium" => 900L * 1024 * 1024,
+        _ => 90L * 1024 * 1024
+    };
 }
 
 public sealed class LinuxTextInjectionService : ITextInjectionService
@@ -615,7 +638,7 @@ public sealed class LinuxAutostartService : IAutostartService
 {
     public void SetEnabled(bool enabled)
     {
-        // Linux autostart has desktop-environment-specific paths. 1.3.0 keeps this a no-op
+        // Linux autostart has desktop-environment-specific paths. 1.3.1 keeps this a no-op
         // instead of writing a broken .desktop file without knowing the install location.
     }
 }

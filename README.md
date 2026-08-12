@@ -1,18 +1,18 @@
 # Fotur Typing Helper
 
-Open-source помощник ввода для Windows 10/11, macOS 12+ и Linux x64-сборки для X11. Версия 1.3.0 автоматически исправляет русско-английскую раскладку целыми фразами, запускает локальную диктовку по глобальной горячей клавише, лучше защищает технический английский текст и исправляет проверку обновлений через GitHub Releases. В этом релизе также добавлена Linux-сборка и приведены в порядок релизные пакеты: без чужих runtime, без пользовательских PDB и с лицензиями внутри дистрибутивов.
+Open-source помощник ввода для Windows 10/11, macOS 12+ и Linux x64-сборки для X11. Версия 1.3.1 автоматически исправляет русско-английскую раскладку целыми фразами, запускает локальную диктовку по глобальной горячей клавише, лучше защищает технический английский текст и исправляет проверку обновлений через GitHub Releases. В этом релизе также добавлена Linux-сборка и приведены в порядок релизные пакеты: без чужих runtime, без пользовательских PDB и с лицензиями внутри дистрибутивов.
 
-## Скачать 1.3.0
+## Скачать 1.3.1
 
 После публикации релиза файлы будут доступны по прямым ссылкам:
 
 | Платформа | Файл |
 |---|---|
-| Windows x64 — установщик | [FoturTypingHelper-Setup-1.3.0-win-x64.exe](https://github.com/Woonze/Fotur_Typing_Helper/releases/download/v1.3.0/FoturTypingHelper-Setup-1.3.0-win-x64.exe) |
-| Windows x64 — portable | [FoturTypingHelper-1.3.0-win-x64-portable.zip](https://github.com/Woonze/Fotur_Typing_Helper/releases/download/v1.3.0/FoturTypingHelper-1.3.0-win-x64-portable.zip) |
-| macOS Apple Silicon — M1 и новее | [FoturTypingHelper-1.3.0-macos-arm64.dmg](https://github.com/Woonze/Fotur_Typing_Helper/releases/download/v1.3.0/FoturTypingHelper-1.3.0-macos-arm64.dmg) |
-| macOS Intel | [FoturTypingHelper-1.3.0-macos-x64.dmg](https://github.com/Woonze/Fotur_Typing_Helper/releases/download/v1.3.0/FoturTypingHelper-1.3.0-macos-x64.dmg) |
-| Linux x64 — X11 | [FoturTypingHelper-1.3.0-linux-x64.tar.gz](https://github.com/Woonze/Fotur_Typing_Helper/releases/download/v1.3.0/FoturTypingHelper-1.3.0-linux-x64.tar.gz) |
+| Windows x64 — установщик | [FoturTypingHelper-Setup-1.3.1-win-x64.exe](https://github.com/Woonze/Fotur_Typing_Helper/releases/download/v1.3.1/FoturTypingHelper-Setup-1.3.1-win-x64.exe) |
+| Windows x64 — portable | [FoturTypingHelper-1.3.1-win-x64-portable.zip](https://github.com/Woonze/Fotur_Typing_Helper/releases/download/v1.3.1/FoturTypingHelper-1.3.1-win-x64-portable.zip) |
+| macOS Apple Silicon — M1 и новее | [FoturTypingHelper-1.3.1-macos-arm64.dmg](https://github.com/Woonze/Fotur_Typing_Helper/releases/download/v1.3.1/FoturTypingHelper-1.3.1-macos-arm64.dmg) |
+| macOS Intel | [FoturTypingHelper-1.3.1-macos-x64.dmg](https://github.com/Woonze/Fotur_Typing_Helper/releases/download/v1.3.1/FoturTypingHelper-1.3.1-macos-x64.dmg) |
+| Linux x64 — X11 | [FoturTypingHelper-1.3.1-linux-x64.tar.gz](https://github.com/Woonze/Fotur_Typing_Helper/releases/download/v1.3.1/FoturTypingHelper-1.3.1-linux-x64.tar.gz) |
 
 Все опубликованные версии находятся в [GitHub Releases](https://github.com/Woonze/Fotur_Typing_Helper/releases). Пользователям Mac перед запуском стоит открыть [пошаговую инструкцию по установке и разрешениям](docs/MACOS_INSTALL.md).
 
@@ -33,13 +33,13 @@ Open-source помощник ввода для Windows 10/11, macOS 12+ и Linux
 
 ## Linux
 
-Linux-сборка 1.3.0 рассчитана на X11/XWayland-сессии. UI, локальная Whisper-диктовка, глобальные хоткеи и автокоррекция упакованы в `FoturTypingHelper-1.3.0-linux-x64.tar.gz`. Запись использует `arecord` из `alsa-utils`, глобальные события клавиатуры — `xinput`, замена текста — `xdotool`. На чистом Wayland многие окружения намеренно блокируют глобальный keyboard hook и synthetic input; для таких сессий Fotur показывает понятный статус и оставляет диктовку через кнопку UI.
+Linux-сборка 1.3.1 рассчитана на X11/XWayland-сессии. UI, локальная Whisper-диктовка, глобальные хоткеи и автокоррекция упакованы в `FoturTypingHelper-1.3.1-linux-x64.tar.gz`. Запись использует `arecord` из `alsa-utils`, глобальные события клавиатуры — `xinput`, замена текста — `xdotool`. На чистом Wayland многие окружения намеренно блокируют глобальный keyboard hook и synthetic input; для таких сессий Fotur показывает понятный статус и оставляет диктовку через кнопку UI.
 
 ## macOS
 
 На macOS нужны три независимых разрешения: «Микрофон», «Мониторинг ввода» и «Универсальный доступ». Первое позволяет записывать речь, второе — видеть глобальные горячие клавиши и набранный текст, третье — удалять и вставлять исправленный текст. Fotur проверяет эти права при каждом запуске, показывает их в настройках и продолжает ждать включения без закрытия приложения.
 
-Сборки 1.3.0 имеют ad-hoc подпись. Без Apple Developer ID приложение пока нельзя нотарифицировать, поэтому Gatekeeper может потребовать подтверждение через «Системные настройки → Конфиденциальность и безопасность → Всё равно открыть». Подробности и решение типовых проблем есть в [инструкции для macOS](docs/MACOS_INSTALL.md).
+Сборки 1.3.1 имеют ad-hoc подпись. Без Apple Developer ID приложение пока нельзя нотарифицировать, поэтому Gatekeeper может потребовать подтверждение через «Системные настройки → Конфиденциальность и безопасность → Всё равно открыть». Подробности и решение типовых проблем есть в [инструкции для macOS](docs/MACOS_INSTALL.md).
 
 ## Документация
 
